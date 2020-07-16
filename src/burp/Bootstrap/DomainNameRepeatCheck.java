@@ -15,11 +15,13 @@ public class DomainNameRepeatCheck {
         return this.domainNameList;
     }
 
-    /*
+    /**
      * 重复主机的检测
      * true  表示重复
      * false 表示不重复
-     * */
+     * @param host
+     * @return boolean
+     */
     public boolean isDomainNameRepeat(String host) {
         for (int i = 0; i < this.getDomainNameList().size(); i++) {
             if (this.getDomainNameList().get(i).equals(host)) {

@@ -11,7 +11,7 @@ import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.0.0 beta";
+    public static String VERSION = "1.0.1 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private PrintWriter stdout;
