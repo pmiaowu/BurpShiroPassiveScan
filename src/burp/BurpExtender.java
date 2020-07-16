@@ -1,29 +1,36 @@
 package burp;
 
+import java.net.URL;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.PrintWriter;
 
 import burp.Bootstrap.DomainNameRepeatCheck;
+import burp.Bootstrap.UrlRepeatCheck;
+
 import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.0.1 beta";
+    public static String VERSION = "1.1.0 beta";
 
     private IBurpExtenderCallbacks callbacks;
+    private IExtensionHelpers helpers;
     private PrintWriter stdout;
 
-    private DomainNameRepeatCheck shiroFrameworkDomainNameRepeatCheck;
+    private DomainNameRepeatCheck domainNameRepeatCheck;
+    private UrlRepeatCheck urlRepeatCheck;
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
+        this.helpers = callbacks.getHelpers();
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
 
-        this.shiroFrameworkDomainNameRepeatCheck = new DomainNameRepeatCheck();
+        this.domainNameRepeatCheck = new DomainNameRepeatCheck();
+        this.urlRepeatCheck = new UrlRepeatCheck();
 
         callbacks.setExtensionName(NAME);
         callbacks.registerScannerCheck(this);
@@ -43,11 +50,27 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
         List<IScanIssue> issues = new ArrayList<IScanIssue>();
 
+        IRequestInfo analyzedIResponseInfo = this.helpers.analyzeRequest(baseRequestResponse.getRequest());
+        String baseRequestMethod = analyzedIResponseInfo.getMethod();
+
+        URL baseRequestUrl = this.helpers.analyzeRequest(baseRequestResponse).getUrl();
+        String newBaseUrl = this.urlRepeatCheck.RemoveUrlParameterValue(baseRequestUrl.toString());
+
+        // url重复检查
+        if (this.urlRepeatCheck.isUrlRepeat(baseRequestMethod, newBaseUrl)) {
+            return null;
+        }
+
+        // 确定以前没有执行过 把该url加入进数组里面防止下次重复扫描
+        this.urlRepeatCheck.addMethodAndUrl(baseRequestMethod, newBaseUrl);
+
+        String baseRequestProtocol = baseRequestResponse.getHttpService().getProtocol();
         String baseRequestHost = baseRequestResponse.getHttpService().getHost();
         int baseRequestPort = baseRequestResponse.getHttpService().getPort();
-        String baseRequestDomainName = baseRequestHost + ":" + baseRequestPort;
+        String baseRequestDomainName = baseRequestProtocol + ":" + baseRequestHost + ":" + baseRequestPort;
 
-        if (this.shiroFrameworkDomainNameRepeatCheck.isDomainNameRepeat(baseRequestDomainName)) {
+        // 域名重复检查
+        if (this.domainNameRepeatCheck.isDomainNameRepeat(baseRequestDomainName)) {
             return null;
         }
 
@@ -62,7 +85,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         }
 
         // 确定是 shiro框架 把该域名加入进数组里面防止下次重复扫描
-         this.shiroFrameworkDomainNameRepeatCheck.getDomainNameList().add(baseRequestDomainName);
+         this.domainNameRepeatCheck.getDomainNameList().add(baseRequestDomainName);
 
         // shiro指纹检测-报告输出
         issues.add(shiroFingerprint.run().export());
@@ -99,4 +122,3 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         }
     }
 }
-
