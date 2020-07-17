@@ -1,26 +1,19 @@
 package burp.Bootstrap;
 
-import java.util.List;
-import java.util.ArrayList;
-
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
+import java.util.HashMap;
 
 public class UrlRepeatCheck {
-    private List<String> requestMethodList;
-    private List<String> urlList;
+    private Map<String, Integer> requestMethodAndUrlMap;
 
     public UrlRepeatCheck() {
-        this.requestMethodList = new ArrayList<String>();
-        this.urlList = new ArrayList<String>();
+        this.requestMethodAndUrlMap = new HashMap<String, Integer>();
     }
 
-    public List<String> getRequestMethodList() {
-        return this.requestMethodList;
-    }
-
-    public List<String> getUrlList() {
-        return this.urlList;
+    public Map<String, Integer> getRequestMethodAndUrlMap() {
+        return this.requestMethodAndUrlMap;
     }
 
     public void addMethodAndUrl(String requestMethod, String url) {
@@ -31,9 +24,7 @@ public class UrlRepeatCheck {
         if (url == null || url.length() <= 0) {
             throw new IllegalArgumentException("url不能为空");
         }
-
-        this.requestMethodList.add(requestMethod);
-        this.urlList.add(url);
+        this.getRequestMethodAndUrlMap().put(requestMethod + " " + url, 1);
     }
 
     /**
@@ -44,13 +35,8 @@ public class UrlRepeatCheck {
      * @return boolean
      */
     public boolean isUrlRepeat(String requestMethod, String url) {
-        for (int i = 0; i < this.getUrlList().size(); i++) {
-            if (!this.getUrlList().get(i).equals(url)) {
-                continue;
-            }
-            if (this.getRequestMethodList().get(i).equals(requestMethod)) {
-                return true;
-            }
+        if (this.requestMethodAndUrlMap.get(requestMethod + " " + url) != null) {
+            return true;
         }
         return false;
     }
@@ -78,6 +64,11 @@ public class UrlRepeatCheck {
         }
     }
 
+    /**
+     * 删除参数值
+     * @param urlQuery
+     * @return String
+     */
     private String RemoveParameterValue(String urlQuery) {
         String parameter = "";
         for (String query : urlQuery.split("&")) {
