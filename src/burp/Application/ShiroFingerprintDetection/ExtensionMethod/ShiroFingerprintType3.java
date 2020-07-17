@@ -88,6 +88,10 @@ public class ShiroFingerprintType3 extends ShiroFingerprintTypeAbstract {
             return null;
         }
 
+        if (!this.isShiroFingerprint()) {
+            return null;
+        }
+
         IHttpRequestResponse baseHttpRequestResponse = this.getHttpRequestResponse();
         URL newHttpRequestUrl = this.helpers.analyzeRequest(baseHttpRequestResponse).getUrl();
 
@@ -115,6 +119,10 @@ public class ShiroFingerprintType3 extends ShiroFingerprintTypeAbstract {
     @Override
     public void consoleExport() {
         if (!this.isRunExtension()) {
+            return;
+        }
+
+        if (!this.isShiroFingerprint()) {
             return;
         }
 
