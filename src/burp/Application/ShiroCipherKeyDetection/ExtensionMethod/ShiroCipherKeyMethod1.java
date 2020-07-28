@@ -13,7 +13,7 @@ import burp.IScanIssue;
 
 import burp.CustomScanIssue;
 import burp.DnsLogModule.DnsLog;
-import burp.Bootstrap.ShiroUrlDnsCheck;
+import burp.Bootstrap.ShiroUrlDns;
 
 public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
     private IBurpExtenderCallbacks callbacks;
@@ -24,11 +24,11 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
     private String[] keys;
     private String rememberMeCookieName;
 
-    private DnsLog dnsLogApi;
+    private DnsLog dnsLog;
 
     private String sendDnsLogUrl;
 
-    private ArrayList<ShiroUrlDnsCheck> shiroUrlDnsCheckArrayList = new ArrayList<ShiroUrlDnsCheck>();
+    private ArrayList<ShiroUrlDns> shiroUrlDnsCheckArrayList = new ArrayList<ShiroUrlDns>();
     private ArrayList<IHttpRequestResponse> httpRequestResponseArrayList = new ArrayList<IHttpRequestResponse>();
 
     public ShiroCipherKeyMethod1(IBurpExtenderCallbacks callbacks,
@@ -39,7 +39,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
 
         this.baseRequestResponse = baseRequestResponse;
 
-        this.dnsLogApi = new DnsLog(this.callbacks, "DnsLogApi");
+        this.dnsLog = new DnsLog(this.callbacks, "DnsLogCn");
 
         this.keys = keys;
         this.rememberMeCookieName = rememberMeCookieName;
@@ -65,8 +65,8 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
             // 这可能是因为 请求发出去了 dnslog还没反应过来
             // 这种情况后面的循环就没必要了, 退出该循环
             // 等待二次验证即可
-            if (this.dnsLogApi.run().getBodyContent() != null) {
-                if (this.dnsLogApi.run().getBodyContent().length() >= 1) {
+            if (this.dnsLog.run().getBodyContent() != null) {
+                if (this.dnsLog.run().getBodyContent().length() >= 1) {
                     break;
                 }
             }
@@ -84,14 +84,14 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
         }
 
         // 开始进行二次验证
-        String dnsLogApiBodyContent = this.dnsLogApi.run().getBodyContent();
-        if (dnsLogApiBodyContent == null || dnsLogApiBodyContent.length() <= 0) {
+        String dnsLogBodyContent = this.dnsLog.run().getBodyContent();
+        if (dnsLogBodyContent == null || dnsLogBodyContent.length() <= 0) {
             return;
         }
 
         for (int i = 0; i < shiroUrlDnsCheckArrayList.size(); i++) {
             // dnslog 内容匹配判断
-            if (!dnsLogApiBodyContent.contains(shiroUrlDnsCheckArrayList.get(i).getSendDnsLogUrl())) {
+            if (!dnsLogBodyContent.contains(shiroUrlDnsCheckArrayList.get(i).getSendDnsLogUrl())) {
                 return;
             }
 
@@ -106,7 +106,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
      * 加密key检测
      */
     private void cipherKeyDetection(String key) {
-        ShiroUrlDnsCheck shiroUrlDnsCheck = new ShiroUrlDnsCheck(key, this.dnsLogApi.run().getTemporaryDomainName());
+        ShiroUrlDns shiroUrlDnsCheck = new ShiroUrlDns(key, this.dnsLog.run().getTemporaryDomainName());
 
         // 请求发送
         IHttpService httpService = this.baseRequestResponse.getHttpService();
@@ -122,14 +122,14 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
         httpRequestResponseArrayList.add(newHttpRequestResponse);
 
         // dnslog 返回的内容判断
-        String dnsLogApiBodyContent = this.dnsLogApi.run().getBodyContent();
-        if (dnsLogApiBodyContent == null || dnsLogApiBodyContent.length() <= 0) {
+        String dnsLogBodyContent = this.dnsLog.run().getBodyContent();
+        if (dnsLogBodyContent == null || dnsLogBodyContent.length() <= 0) {
             return;
         }
 
         // dnslog 内容匹配判断
         String sendDnsLogUrl = shiroUrlDnsCheck.getSendDnsLogUrl();
-        if (!dnsLogApiBodyContent.contains(sendDnsLogUrl)) {
+        if (!dnsLogBodyContent.contains(sendDnsLogUrl)) {
             return;
         }
 
@@ -140,7 +140,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
     /**
      * 设置问题详情
      */
-    private void setIssuesDetail(IHttpRequestResponse httpRequestResponse, ShiroUrlDnsCheck shiroUrlDnsCheck) {
+    private void setIssuesDetail(IHttpRequestResponse httpRequestResponse, ShiroUrlDns shiroUrlDnsCheck) {
         this.setShiroCipherKeyExists();
         this.setCipherKey(shiroUrlDnsCheck.getKey());
         this.setHttpRequestResponse(httpRequestResponse);
@@ -165,7 +165,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
         String str6 = String.format("=====================================<br/>");
 
         // dnslog 详情输出
-        String str7 = this.dnsLogApi.run().export();
+        String str7 = this.dnsLog.run().export();
 
         String detail = str1 + str2 + str3 + str4 + str5 + str6 + str7;
 
@@ -207,6 +207,6 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
         stdout.println("");
 
         // dnslog 控制台详情输出
-        this.dnsLogApi.run().consoleExport();
+        this.dnsLog.run().consoleExport();
     }
 }

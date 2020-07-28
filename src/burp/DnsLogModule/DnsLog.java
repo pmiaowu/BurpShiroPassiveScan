@@ -5,26 +5,26 @@ import burp.IBurpExtenderCallbacks;
 import burp.DnsLogModule.ExtensionMethod.*;
 
 public class DnsLog {
-    private DnsLogApiInterface dnsLogApi;
+    private DnsLogInterface dnsLog;
 
     public DnsLog(IBurpExtenderCallbacks callbacks, String dnsLogClassName) {
         this.setApi(callbacks, dnsLogClassName);
     }
 
-    private DnsLogApiInterface setApi(IBurpExtenderCallbacks callbacks, String dnsLogClassName) {
+    private DnsLogInterface setApi(IBurpExtenderCallbacks callbacks, String dnsLogClassName) {
         if (dnsLogClassName == null || dnsLogClassName.length() <= 0) {
-            throw new IllegalArgumentException("DnsLogApi模块-请输入要调用的dnsLog插件");
+            throw new IllegalArgumentException("DnsLog模块-请输入要调用的dnsLog插件");
         }
 
-        if (dnsLogClassName.equals("DnsLogApi")) {
-            dnsLogApi = new DnsLogApi(callbacks);
-            return dnsLogApi;
+        if (dnsLogClassName.equals("DnsLogCn")) {
+            dnsLog = new DnsLogCn(callbacks);
+            return dnsLog;
         }
 
-        throw new IllegalArgumentException(String.format("DnsLogApi模块-对不起您输入的 %s 扩展找不到", dnsLogClassName));
+        throw new IllegalArgumentException(String.format("DnsLog模块-对不起您输入的 %s 扩展找不到", dnsLogClassName));
     }
 
-    public DnsLogApiInterface run() {
-        return this.dnsLogApi;
+    public DnsLogInterface run() {
+        return this.dnsLog;
     }
 }

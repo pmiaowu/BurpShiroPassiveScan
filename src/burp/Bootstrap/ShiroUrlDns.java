@@ -14,13 +14,13 @@ import org.apache.shiro.codec.Base64;
 import org.apache.shiro.crypto.AesCipherService;
 import org.apache.shiro.util.ByteSource;
 
-public class ShiroUrlDnsCheck {
+public class ShiroUrlDns {
     private String key = "";
     private String dnsLogUrl = "";
     private String sendDnsLogUrl = "";
     private String rememberMeEncryptValue = "";
 
-    public ShiroUrlDnsCheck(String key, String dnsLogUrl) {
+    public ShiroUrlDns(String key, String dnsLogUrl) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("ShiroUrlDnsCheck类-key参数不能为空");
         }

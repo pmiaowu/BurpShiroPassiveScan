@@ -3,11 +3,11 @@ package burp.Bootstrap;
 import java.util.List;
 import java.util.ArrayList;
 
-public class DomainNameRepeatCheck {
+public class DomainNameRepeat {
 
     private List<String> domainNameList;
 
-    public DomainNameRepeatCheck() {
+    public DomainNameRepeat() {
         this.domainNameList = new ArrayList<String>();
     }
 
@@ -22,7 +22,7 @@ public class DomainNameRepeatCheck {
      * @param host
      * @return boolean
      */
-    public boolean isDomainNameRepeat(String host) {
+    public boolean check(String host) {
         for (int i = 0; i < this.getDomainNameList().size(); i++) {
             if (this.getDomainNameList().get(i).equals(host)) {
                 return true;

@@ -14,7 +14,7 @@ import org.apache.http.util.EntityUtils;
 
 import burp.IBurpExtenderCallbacks;
 
-public class DnsLogApi extends DnsLogApiAbstract {
+public class DnsLogCn extends DnsLogAbstract {
     private IBurpExtenderCallbacks callbacks;
 
     private String dnslogDomainName;
@@ -24,12 +24,12 @@ public class DnsLogApi extends DnsLogApiAbstract {
 
     private CookieStore cookiestore;
 
-    public DnsLogApi(IBurpExtenderCallbacks callbacks) {
+    public DnsLogCn(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
 
         this.dnslogDomainName = "http://www.dnslog.cn";
 
-        this.setExtensionName("DnsLogApi");
+        this.setExtensionName("DnsLogCn");
 
         this.init();
     }
@@ -47,12 +47,12 @@ public class DnsLogApi extends DnsLogApiAbstract {
             // 设置 dnslog 的临时域名
             String temporaryDomainName = EntityUtils.toString(response.getEntity());
             if (temporaryDomainName == null || temporaryDomainName.length() <= 0) {
-                throw new IllegalArgumentException("DnsLogApi扩展-获取临时域名失败, 请检查");
+                throw new IllegalArgumentException("DnsLogCn扩展-获取临时域名失败, 请检查");
             }
             this.setTemporaryDomainName(temporaryDomainName);
 
             if (context.getCookieStore().getCookies().size() <= 0) {
-                throw new IllegalArgumentException("DnsLogApi扩展-dnsLogCookie为空, 无法正常获取dnsLog数据, 请检查");
+                throw new IllegalArgumentException("DnsLogCn扩展-dnsLogCookie为空, 无法正常获取dnsLog数据, 请检查");
             }
             this.cookiestore = context.getCookieStore();
 
@@ -127,9 +127,7 @@ public class DnsLogApi extends DnsLogApiAbstract {
         stdout.println(String.format("被调用的插件: %s", this.getExtensionName()));
         stdout.println(String.format("dnsLog域名: %s", this.dnslogDomainName));
         stdout.println(String.format("dnsLog保存记录的api接口: %s", this.dnslogDomainName + "/getrecords.php"));
-        stdout.println(String.format("cookie: %s=%s",
-                this.dnsLogCookieName,
-                this.dnsLogCookieValue));
+        stdout.println(String.format("cookie: %s=%s",this.dnsLogCookieName, this.dnsLogCookieValue));
         stdout.println(String.format("dnsLog临时域名: %s", this.getTemporaryDomainName()));
         stdout.println("===================================");
         stdout.println("");

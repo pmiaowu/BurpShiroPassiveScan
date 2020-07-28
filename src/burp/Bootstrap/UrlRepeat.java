@@ -5,10 +5,10 @@ import java.net.URL;
 import java.util.Map;
 import java.util.HashMap;
 
-public class UrlRepeatCheck {
+public class UrlRepeat {
     private Map<String, Integer> requestMethodAndUrlMap;
 
-    public UrlRepeatCheck() {
+    public UrlRepeat() {
         this.requestMethodAndUrlMap = new HashMap<String, Integer>();
     }
 
@@ -34,7 +34,7 @@ public class UrlRepeatCheck {
      * @param url
      * @return boolean
      */
-    public boolean isUrlRepeat(String requestMethod, String url) {
+    public boolean check(String requestMethod, String url) {
         if (this.requestMethodAndUrlMap.get(requestMethod + " " + url) != null) {
             return true;
         }

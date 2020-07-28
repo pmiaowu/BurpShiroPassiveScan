@@ -4,7 +4,7 @@ package burp.DnsLogModule.ExtensionMethod;
  * DnsLog扩展的抽象类
  * 所有的DnsLog检测的方法都要继承它并实现所有的接口
  */
-abstract class DnsLogApiAbstract implements DnsLogApiInterface{
+abstract class DnsLogAbstract implements DnsLogInterface {
     private String extensionName = "";
 
     private String temporaryDomainName;
@@ -15,7 +15,7 @@ abstract class DnsLogApiAbstract implements DnsLogApiInterface{
      */
     protected void setExtensionName(String value) {
         if (value == null || value.isEmpty()) {
-            throw new IllegalArgumentException("DnsLogApi扩展-扩展名称不能为空");
+            throw new IllegalArgumentException("DnsLog扩展-扩展名称不能为空");
         }
         this.extensionName = value;
     }
@@ -26,7 +26,7 @@ abstract class DnsLogApiAbstract implements DnsLogApiInterface{
      */
     private void extensionNameCheck() {
         if (this.extensionName == null || this.extensionName.isEmpty()) {
-            throw new IllegalArgumentException("请为该DnsLogApi扩展-设置扩展名称");
+            throw new IllegalArgumentException("请为该DnsLog扩展-设置扩展名称");
         }
     }
 

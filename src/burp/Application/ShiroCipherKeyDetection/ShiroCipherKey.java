@@ -13,9 +13,7 @@ public class ShiroCipherKey {
     public ShiroCipherKey(IBurpExtenderCallbacks callbacks,
                           IHttpRequestResponse baseRequestResponse,
                           ShiroFingerprint shiroFingerprint) {
-
         this.init(callbacks, baseRequestResponse, shiroFingerprint);
-
     }
 
     private void init(IBurpExtenderCallbacks callbacks,
