@@ -11,6 +11,8 @@ import burp.IHttpService;
 import burp.IParameter;
 import burp.IScanIssue;
 
+import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
+
 import burp.CustomScanIssue;
 import burp.DnsLogModule.DnsLog;
 import burp.Bootstrap.ShiroUrlDns;
@@ -22,6 +24,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
     private IHttpRequestResponse baseRequestResponse;
 
     private String[] keys;
+
     private String rememberMeCookieName;
 
     private DnsLog dnsLog;
@@ -33,7 +36,8 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
 
     public ShiroCipherKeyMethod1(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
-                                 String[] keys, String rememberMeCookieName) {
+                                 String[] keys,
+                                 ShiroFingerprint shiroFingerprint) {
         this.callbacks = callbacks;
         this.helpers = callbacks.getHelpers();
 
@@ -42,7 +46,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
         this.dnsLog = new DnsLog(this.callbacks, "DnsLogCn");
 
         this.keys = keys;
-        this.rememberMeCookieName = rememberMeCookieName;
+        this.rememberMeCookieName = shiroFingerprint.run().getResponseDefaultRememberMeCookieName();
 
         this.setExtensionName("ShiroCipherKeyMethod1");
 

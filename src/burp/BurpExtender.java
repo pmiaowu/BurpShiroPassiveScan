@@ -14,7 +14,7 @@ import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.3.1 beta";
+    public static String VERSION = "1.4.0 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -94,7 +94,12 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         shiroFingerprint.run().consoleExport();
 
         // shiro加密key检测
-        ShiroCipherKey shiroCipherKey = new ShiroCipherKey(this.callbacks, baseRequestResponse, shiroFingerprint);
+        ShiroCipherKey shiroCipherKey = new ShiroCipherKey(
+                this.callbacks,
+                baseRequestResponse,
+                shiroFingerprint,
+                "ShiroCipherKeyMethod2");
+
         if (!shiroCipherKey.run().isShiroCipherKeyExists()) {
             return issues;
         }
@@ -115,10 +120,10 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     @Override
     public int consolidateDuplicateIssues(IScanIssue existingIssue, IScanIssue newIssue) {
-        if (existingIssue.getIssueName().equals(newIssue.getIssueName())) {
-            return -1;
-        } else {
-            return 0;
-        }
+       if (existingIssue.getIssueName().equals(newIssue.getIssueName())) {
+           return -1;
+       } else {
+           return 0;
+       }
     }
 }

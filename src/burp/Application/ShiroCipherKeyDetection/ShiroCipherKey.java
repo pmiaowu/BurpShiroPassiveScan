@@ -12,13 +12,15 @@ public class ShiroCipherKey {
 
     public ShiroCipherKey(IBurpExtenderCallbacks callbacks,
                           IHttpRequestResponse baseRequestResponse,
-                          ShiroFingerprint shiroFingerprint) {
-        this.init(callbacks, baseRequestResponse, shiroFingerprint);
+                          ShiroFingerprint shiroFingerprint,
+                          String callClassName) {
+        this.init(callbacks, baseRequestResponse, shiroFingerprint, callClassName);
     }
 
-    private void init(IBurpExtenderCallbacks callbacks,
-                      IHttpRequestResponse baseRequestResponse,
-                      ShiroFingerprint shiroFingerprint) {
+    private ShiroCipherKeyMethodInterface init(IBurpExtenderCallbacks callbacks,
+                                               IHttpRequestResponse baseRequestResponse,
+                                               ShiroFingerprint shiroFingerprint,
+                                               String callClassName) {
 
         String[] keys = {
                 "kPH+bIxk5D2deZiIxcaaaA==", "Z3VucwAAAAAAAAAAAAAAAA==", "wGiHplamyXlVB11UXWol8g==",
@@ -61,13 +63,28 @@ public class ShiroCipherKey {
                 "SDKOLKn2J1j/2BHjeZwAoQ=="
             };
 
-        ShiroCipherKeyMethod1 shiroCipherKey = new ShiroCipherKeyMethod1(
-                                        callbacks,
-                                        baseRequestResponse,
-                                        keys,
-                                        shiroFingerprint.run().getRequestDefaultRememberMeCookieName());
+        if (callClassName.equals("ShiroCipherKeyMethod1")) {
+            ShiroCipherKeyMethod1 shiroCipherKey = new ShiroCipherKeyMethod1(
+                    callbacks,
+                    baseRequestResponse,
+                    keys,
+                    shiroFingerprint);
+            this.shiroCipherKeyMethod = shiroCipherKey;
+            return this.shiroCipherKeyMethod;
+        }
 
-        this.shiroCipherKeyMethod = shiroCipherKey;
+        if (callClassName.equals("ShiroCipherKeyMethod2")) {
+            ShiroCipherKeyMethod2 shiroCipherKey = new ShiroCipherKeyMethod2(
+                    callbacks,
+                    baseRequestResponse,
+                    keys,
+                    shiroFingerprint);
+            this.shiroCipherKeyMethod = shiroCipherKey;
+            return this.shiroCipherKeyMethod;
+        }
+
+        throw new IllegalArgumentException(
+                String.format("ShiroCipherKey模块-对不起您输入的 %s 扩展找不到", callClassName));
     }
 
     public ShiroCipherKeyMethodInterface run() {
