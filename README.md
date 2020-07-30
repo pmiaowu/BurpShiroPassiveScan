@@ -55,7 +55,7 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 
 # 修改默认shiro框架key检测的方法
 
-有的小伙伴可能还是更喜欢dnslog的方式进行 keu检测
+有的小伙伴可能还是更喜欢dnslog的方式进行 key检测
 
 这里提供一个方法进行修改
 
