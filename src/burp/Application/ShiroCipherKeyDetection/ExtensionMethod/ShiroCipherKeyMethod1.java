@@ -10,10 +10,11 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IParameter;
 import burp.IScanIssue;
+import burp.CustomScanIssue;
 
 import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 
-import burp.CustomScanIssue;
+
 import burp.DnsLogModule.DnsLog;
 import burp.Bootstrap.ShiroUrlDns;
 
