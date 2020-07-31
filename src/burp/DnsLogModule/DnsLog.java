@@ -8,10 +8,10 @@ public class DnsLog {
     private DnsLogInterface dnsLog;
 
     public DnsLog(IBurpExtenderCallbacks callbacks, String callClassName) {
-        this.setApi(callbacks, callClassName);
+        this.init(callbacks, callClassName);
     }
 
-    private DnsLogInterface setApi(IBurpExtenderCallbacks callbacks, String callClassName) {
+    private DnsLogInterface init(IBurpExtenderCallbacks callbacks, String callClassName) {
         if (callClassName == null || callClassName.length() <= 0) {
             throw new IllegalArgumentException("DnsLog模块-请输入要调用的dnsLog插件");
         }
