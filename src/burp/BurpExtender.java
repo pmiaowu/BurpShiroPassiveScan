@@ -14,7 +14,7 @@ import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.4.2 beta";
+    public static String VERSION = "1.4.3 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -64,6 +64,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         // 确定以前没有执行过 把该url加入进数组里面防止下次重复扫描
         this.urlRepeat.addMethodAndUrl(baseRequestMethod, newBaseUrl);
 
+        // 基础请求域名构造
         String baseRequestProtocol = baseRequestResponse.getHttpService().getProtocol();
         String baseRequestHost = baseRequestResponse.getHttpService().getHost();
         int baseRequestPort = baseRequestResponse.getHttpService().getPort();
@@ -74,12 +75,13 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             return null;
         }
 
-        // shiro指纹检测
+        // shiro指纹检测-模块运行
         ShiroFingerprint shiroFingerprint = new ShiroFingerprint(this.callbacks, baseRequestResponse);
         if (!shiroFingerprint.run().isRunExtension()) {
             return null;
         }
 
+        // 检测是否shiro框架
         if (!shiroFingerprint.run().isShiroFingerprint()) {
             return null;
         }
@@ -93,13 +95,14 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         // shiro指纹检测-控制台报告输出
         shiroFingerprint.run().consoleExport();
 
-        // shiro加密key检测
+        // shiro加密key检测-模块运行
         ShiroCipherKey shiroCipherKey = new ShiroCipherKey(
                 this.callbacks,
                 baseRequestResponse,
                 shiroFingerprint,
                 "ShiroCipherKeyMethod2");
 
+        // 检测是否爆破出了shiro加密key
         if (!shiroCipherKey.run().isShiroCipherKeyExists()) {
             return issues;
         }
