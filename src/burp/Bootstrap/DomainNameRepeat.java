@@ -1,32 +1,38 @@
 package burp.Bootstrap;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public class DomainNameRepeat {
 
-    private List<String> domainNameList;
+    private Map<String, Integer> domainNameMap;
 
     public DomainNameRepeat() {
-        this.domainNameList = new ArrayList<String>();
+        this.domainNameMap = new HashMap<String, Integer>();
     }
 
-    public List<String> getDomainNameList() {
-        return this.domainNameList;
+    public Map<String, Integer> getDomainNameMap() {
+        return this.domainNameMap;
+    }
+
+    public void add(String domainName) {
+        if (domainName == null || domainName.length() <= 0) {
+            throw new IllegalArgumentException("域名不能为空");
+        }
+
+        this.getDomainNameMap().put(domainName, 1);
     }
 
     /**
      * 重复主机的检测
      * true  表示重复
      * false 表示不重复
-     * @param host
+     * @param domainName
      * @return boolean
      */
-    public boolean check(String host) {
-        for (int i = 0; i < this.getDomainNameList().size(); i++) {
-            if (this.getDomainNameList().get(i).equals(host)) {
-                return true;
-            }
+    public boolean check(String domainName) {
+        if (this.getDomainNameMap().get(domainName) != null) {
+            return true;
         }
         return false;
     }

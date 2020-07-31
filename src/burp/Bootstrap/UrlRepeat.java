@@ -24,6 +24,7 @@ public class UrlRepeat {
         if (url == null || url.length() <= 0) {
             throw new IllegalArgumentException("url不能为空");
         }
+
         this.getRequestMethodAndUrlMap().put(requestMethod + " " + url, 1);
     }
 
@@ -35,7 +36,7 @@ public class UrlRepeat {
      * @return boolean
      */
     public boolean check(String requestMethod, String url) {
-        if (this.requestMethodAndUrlMap.get(requestMethod + " " + url) != null) {
+        if (this.getRequestMethodAndUrlMap().get(requestMethod + " " + url) != null) {
             return true;
         }
         return false;
