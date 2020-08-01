@@ -76,10 +76,6 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
      * 加密key检测
      */
     private void cipherKeyDetection(String key, byte[] exp) {
-        // 1，构造然后直接发包
-        // 2，发包完毕以后判断一下是否还存在 rememberMe 如果不存在说明可能跑到key了
-        // 3，流程2通过以后，在随便构造一个包，发过去，如果重新出现了 rememberMe=deleteMe 说明真的跑出来了 key
-
         IHttpService httpService = this.baseRequestResponse.getHttpService();
 
         // 使用当前可能正确的key-发送可能被此shiro框架成功解密的请求
