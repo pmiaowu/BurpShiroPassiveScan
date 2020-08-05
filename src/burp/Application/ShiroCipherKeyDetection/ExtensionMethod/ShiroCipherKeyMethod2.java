@@ -27,7 +27,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
     private String newRequestRememberMeCookieValue;
 
-    private double similarity_ratio = 0.7;
+    private double similarityRatio = 0.7;
 
     public ShiroCipherKeyMethod2(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
@@ -89,7 +89,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         // 判断shiro指纹的请求与当前可能正确key的请求相似度是否差不多一致
         String newHttpBody1 = this.getHttpResponseBody(newHttpRequestResponse1);
         double htmlSimilarityRatio1 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody1);
-        if (this.similarity_ratio > htmlSimilarityRatio1) {
+        if (this.similarityRatio > htmlSimilarityRatio1) {
             return;
         }
 
@@ -108,7 +108,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         // 判断shiro指纹的请求与当前必定错误的请求相似度是否差不多一致
         String newHttpBody2 = this.getHttpResponseBody(newHttpRequestResponse2);
         double htmlSimilarityRatio2 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody2);
-        if (this.similarity_ratio > htmlSimilarityRatio2) {
+        if (this.similarityRatio > htmlSimilarityRatio2) {
             return;
         }
 
@@ -163,7 +163,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         String newHttpBody = this.getHttpResponseBody(newHttpRequestResponse);
 
         double htmlSimilarityRatio = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody);
-        if (this.similarity_ratio > htmlSimilarityRatio) {
+        if (this.similarityRatio > htmlSimilarityRatio) {
             return this.getNewHttpRequestResponse(rememberMe, remainingRunNumber);
         }
 
