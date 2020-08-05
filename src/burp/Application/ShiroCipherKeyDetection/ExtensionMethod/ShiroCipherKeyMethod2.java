@@ -8,10 +8,7 @@ import org.apache.shiro.crypto.AesCipherService;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.util.ByteSource;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.URL;
 
 public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
@@ -22,11 +19,15 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
     private String[] keys;
 
+    private IHttpRequestResponse shiroFingerprintHttpRequestResponse;
+
     private String rememberMeCookieName;
 
     private String responseRememberMeCookieValue;
 
     private String newRequestRememberMeCookieValue;
+
+    private double similarity_ratio = 0.7;
 
     public ShiroCipherKeyMethod2(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
@@ -38,6 +39,8 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         this.baseRequestResponse = baseRequestResponse;
 
         this.keys = keys;
+
+        this.shiroFingerprintHttpRequestResponse = shiroFingerprint.run().getHttpRequestResponse();;
 
         this.rememberMeCookieName = shiroFingerprint.run().getResponseDefaultRememberMeCookieName();
 
@@ -76,56 +79,161 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
      * 加密key检测
      */
     private void cipherKeyDetection(String key, byte[] exp) {
-        IHttpService httpService = this.baseRequestResponse.getHttpService();
+        int shiroFingerprintCookieRememberMeNumber = this.getHttpCookieRememberMeNumber(this.shiroFingerprintHttpRequestResponse);
+        String shiroFingerprintHttpBody = this.getHttpResponseBody(this.shiroFingerprintHttpRequestResponse);
 
         // 使用当前可能正确的key-发送可能被此shiro框架成功解密的请求
         String correctRememberMe = this.shiroRememberMeEncrypt(key, exp);
+        IHttpRequestResponse newHttpRequestResponse1 = this.getNewHttpRequestResponse(correctRememberMe, 3);
 
-        IParameter newParameter1 = this.helpers.buildParameter(
-                this.rememberMeCookieName,
-                correctRememberMe,
-                (byte)2);
-        byte[] newRequest1 = this.helpers.updateParameter(this.baseRequestResponse.getRequest(), newParameter1);
-        IHttpRequestResponse newHttpRequestResponse1 = this.callbacks.makeHttpRequest(httpService, newRequest1);
+        // 判断shiro指纹的请求与当前可能正确key的请求相似度是否差不多一致
+        String newHttpBody1 = this.getHttpResponseBody(newHttpRequestResponse1);
+        double htmlSimilarityRatio1 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody1);
+        if (this.similarity_ratio > htmlSimilarityRatio1) {
+            return;
+        }
 
         // 判断当前可能正确的请求-是否被此shiro框架解密
-        for (ICookie c : this.helpers.analyzeResponse(newHttpRequestResponse1.getResponse()).getCookies()) {
-            if (c.getName().equals(this.rememberMeCookieName)) {
-                if (c.getValue().equals(this.responseRememberMeCookieValue)) {
-                    return;
-                }
-            }
+        int newHttpCookieRememberMeNumber1 = this.getHttpCookieRememberMeNumber(newHttpRequestResponse1);
+        if (newHttpCookieRememberMeNumber1 >= shiroFingerprintCookieRememberMeNumber) {
+            return;
         }
 
         // 二次验证-这样可以减少因为waf造成的大量误报
         // 使用一个必定错误的key-发送一个肯定不会被此shiro框架成功解密的请求
         // 密钥 errorKey 然后 aes 加密 == U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=
         String errorRememberMe = this.shiroRememberMeEncrypt("U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=", exp);
+        IHttpRequestResponse newHttpRequestResponse2 = this.getNewHttpRequestResponse(errorRememberMe, 3);
 
-        IParameter newParameter2 = this.helpers.buildParameter(
-                this.rememberMeCookieName,
-                errorRememberMe,
-                (byte)2);
-        byte[] newRequest2 = this.helpers.updateParameter(this.baseRequestResponse.getRequest(), newParameter2);
-        IHttpRequestResponse newHttpRequestResponse2 = this.callbacks.makeHttpRequest(httpService, newRequest2);
-
-        // 判断当前必定错误的请求-是否被此shiro框架解密
-        Boolean isCheckSuccess = false;
-        for (ICookie c : this.helpers.analyzeResponse(newHttpRequestResponse2.getResponse()).getCookies()) {
-            if (c.getName().equals(this.rememberMeCookieName)) {
-                if (c.getValue().equals(this.responseRememberMeCookieValue)) {
-                    isCheckSuccess = true;
-                    break;
-                }
-            }
+        // 判断shiro指纹的请求与当前必定错误的请求相似度是否差不多一致
+        String newHttpBody2 = this.getHttpResponseBody(newHttpRequestResponse2);
+        double htmlSimilarityRatio2 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody2);
+        if (this.similarity_ratio > htmlSimilarityRatio2) {
+            return;
         }
 
-        if (!isCheckSuccess) {
+        // 判断当前必定错误的请求-是否被此shiro框架解密
+        int newHttpCookieRememberMeNumber2 = this.getHttpCookieRememberMeNumber(newHttpRequestResponse2);
+        if(newHttpCookieRememberMeNumber2 < shiroFingerprintCookieRememberMeNumber) {
             return;
         }
 
         // 设置问题详情
         this.setIssuesDetail(newHttpRequestResponse1, key, correctRememberMe);
+    }
+
+    /**
+     * 获取http cookie 记住我出现的次数
+     * @param httpRequestResponse
+     * @return
+     */
+    private int getHttpCookieRememberMeNumber(IHttpRequestResponse httpRequestResponse) {
+        int number = 0;
+        for (ICookie c : this.helpers.analyzeResponse(httpRequestResponse.getResponse()).getCookies()) {
+            if (c.getName().equals(this.rememberMeCookieName)) {
+                if (c.getValue().equals(this.responseRememberMeCookieValue)) {
+                    number++;
+                }
+            }
+        }
+        return number;
+    }
+
+    /**
+     * 获取新的http请求响应
+     * @param rememberMe
+     * @param remainingRunNumber 剩余运行次数
+     * @return IHttpRequestResponse
+     */
+    private IHttpRequestResponse getNewHttpRequestResponse(String rememberMe, int remainingRunNumber) {
+        IHttpService httpService = this.baseRequestResponse.getHttpService();
+        IParameter newParameter = this.helpers.buildParameter(
+                this.rememberMeCookieName,
+                rememberMe,
+                (byte)2);
+        byte[] newRequest = this.helpers.updateParameter(this.baseRequestResponse.getRequest(), newParameter);
+        IHttpRequestResponse newHttpRequestResponse = this.callbacks.makeHttpRequest(httpService, newRequest);
+
+        if (remainingRunNumber <= 1) {
+            return newHttpRequestResponse;
+        }
+        remainingRunNumber--;
+
+        String shiroFingerprintHttpBody = this.getHttpResponseBody(this.shiroFingerprintHttpRequestResponse);
+        String newHttpBody = this.getHttpResponseBody(newHttpRequestResponse);
+
+        double htmlSimilarityRatio = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody);
+        if (this.similarity_ratio > htmlSimilarityRatio) {
+            return this.getNewHttpRequestResponse(rememberMe, remainingRunNumber);
+        }
+
+        return newHttpRequestResponse;
+    }
+
+    /**
+     * 获取响应的Body内容
+     * @param httpRequestResponse
+     * @return String
+     */
+    private String getHttpResponseBody(IHttpRequestResponse httpRequestResponse) {
+        byte[] response = httpRequestResponse.getResponse();
+        IResponseInfo responseInfo = this.helpers.analyzeResponse(response);
+
+        int httpBodyOffset = responseInfo.getBodyOffset();
+        int httpBodyLength = response.length - httpBodyOffset;
+
+        String httpBody = null;
+        try {
+            httpBody = new String(response, httpBodyOffset, httpBodyLength, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return httpBody;
+    }
+
+    /**
+     * 两个字符串相似度匹配
+     * @param str
+     * @param target
+     * @return double
+     */
+    private static double getSimilarityRatio(String str, String target) {
+        int d[][]; // 矩阵
+        int n = str.length();
+        int m = target.length();
+        int i; // 遍历str的
+        int j; // 遍历target的
+        char ch1; // str的
+        char ch2; // target的
+        int temp; // 记录相同字符,在某个矩阵位置值的增量,不是0就是1
+        if (n == 0 || m == 0) {
+            return 0;
+        }
+        d = new int[n + 1][m + 1];
+        for (i = 0; i <= n; i++) { // 初始化第一列
+            d[i][0] = i;
+        }
+
+        for (j = 0; j <= m; j++) { // 初始化第一行
+            d[0][j] = j;
+        }
+
+        for (i = 1; i <= n; i++) { // 遍历str
+            ch1 = str.charAt(i - 1);
+            // 去匹配target
+            for (j = 1; j <= m; j++) {
+                ch2 = target.charAt(j - 1);
+                if (ch1 == ch2 || ch1 == ch2 + 32 || ch1 + 32 == ch2) {
+                    temp = 0;
+                } else {
+                    temp = 1;
+                }
+                // 左边+1,上边+1, 左上角+temp取最小
+                d[i][j] = Math.min(Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1), d[i - 1][j - 1] + temp);
+            }
+        }
+
+        return (1 - (double) d[n][m] / Math.max(str.length(), target.length()));
     }
 
     /**
