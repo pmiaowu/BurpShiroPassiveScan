@@ -3,19 +3,15 @@ package burp.Application.ShiroFingerprintDetection.ExtensionMethod;
 import java.net.URL;
 import java.io.PrintWriter;
 
-import burp.IBurpExtenderCallbacks;
-import burp.IHttpRequestResponse;
-import burp.IExtensionHelpers;
-import burp.ICookie;
-import burp.IScanIssue;
-
-import burp.CustomScanIssue;
+import burp.*;
 
 public class ShiroFingerprintType2 extends ShiroFingerprintTypeAbstract {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
 
     private IHttpRequestResponse baseRequestResponse;
+
+    private String rememberMeCookieValue = "test";
 
     public ShiroFingerprintType2(IBurpExtenderCallbacks callbacks, IHttpRequestResponse baseRequestResponse) {
         this.callbacks = callbacks;
@@ -45,20 +41,48 @@ public class ShiroFingerprintType2 extends ShiroFingerprintTypeAbstract {
             return;
         }
 
+        // 先保存一个基础的请求响应
         this.setHttpRequestResponse(this.baseRequestResponse);
 
         for (ICookie c : this.helpers.analyzeResponse(this.baseRequestResponse.getResponse()).getCookies()) {
             if (c.getValue().equals("deleteMe")) {
                 this.setShiroFingerprint();
 
+                // 通过返回包的key重新构造一个请求发过去
+                // 这样二次确认过的请求响应, 可以获得最真实的结果
+                IHttpRequestResponse newHttpRequestResponse = this.getNewHttpRequestResponse(
+                        c.getName(),
+                        this.rememberMeCookieValue);
+
+                // 二次确认的请求确定是shiro框架了
+                // 保存这个最真实的结果, 覆盖上面那个基础的请求响应
+                this.setHttpRequestResponse(newHttpRequestResponse);
+
                 this.setRequestDefaultRememberMeCookieName(c.getName());
-                this.setRequestDefaultRememberMeCookieValue("test");
+                this.setRequestDefaultRememberMeCookieValue(this.rememberMeCookieValue);
 
                 this.setResponseDefaultRememberMeCookieName(c.getName());
                 this.setResponseDefaultRememberMeCookieValue(c.getValue());
                 break;
             }
         }
+    }
+
+    /**
+     * 获取新的http请求响应
+     * @param rememberMeCookieName
+     * @param rememberMeCookieValue
+     * @return IHttpRequestResponse
+     */
+    private IHttpRequestResponse getNewHttpRequestResponse(String rememberMeCookieName, String rememberMeCookieValue) {
+        IHttpService httpService = this.baseRequestResponse.getHttpService();
+        IParameter newParameter = this.helpers.buildParameter(
+                rememberMeCookieName,
+                rememberMeCookieValue,
+                (byte)2);
+        byte[] newRequest = this.helpers.updateParameter(this.baseRequestResponse.getRequest(), newParameter);
+        IHttpRequestResponse newHttpRequestResponse = this.callbacks.makeHttpRequest(httpService, newRequest);
+        return newHttpRequestResponse;
     }
 
     @Override
