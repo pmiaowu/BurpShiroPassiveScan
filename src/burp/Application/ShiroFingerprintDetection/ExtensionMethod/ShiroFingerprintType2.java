@@ -11,7 +11,7 @@ public class ShiroFingerprintType2 extends ShiroFingerprintTypeAbstract {
 
     private IHttpRequestResponse baseRequestResponse;
 
-    private String rememberMeCookieValue = "test";
+    private String rememberMeCookieValue = "2";
 
     public ShiroFingerprintType2(IBurpExtenderCallbacks callbacks, IHttpRequestResponse baseRequestResponse) {
         this.callbacks = callbacks;

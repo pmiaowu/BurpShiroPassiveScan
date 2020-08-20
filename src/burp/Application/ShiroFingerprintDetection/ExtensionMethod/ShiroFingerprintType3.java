@@ -19,7 +19,7 @@ public class ShiroFingerprintType3 extends ShiroFingerprintTypeAbstract {
     private IHttpRequestResponse baseRequestResponse;
 
     private String rememberMeCookieName = "rememberMe";
-    private String rememberMeCookieValue = "";
+    private String rememberMeCookieValue = "3";
 
     public ShiroFingerprintType3(IBurpExtenderCallbacks callbacks, IHttpRequestResponse baseRequestResponse) {
         this.callbacks = callbacks;
@@ -50,7 +50,6 @@ public class ShiroFingerprintType3 extends ShiroFingerprintTypeAbstract {
             for (ICookie c : this.helpers.analyzeResponse(this.baseRequestResponse.getResponse()).getCookies()) {
                 if (c.getName().equals(this.rememberMeCookieName)) {
                     if (c.getValue().equals("deleteMe")) {
-                        this.rememberMeCookieValue = p.getValue();
                         this.registerExtension();
                         return;
                     }
