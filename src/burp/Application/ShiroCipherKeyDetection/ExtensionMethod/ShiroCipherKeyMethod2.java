@@ -14,6 +14,7 @@ import java.net.URL;
 public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
+    private PrintWriter stdout;
 
     private IHttpRequestResponse baseRequestResponse;
 
@@ -35,6 +36,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
                                  ShiroFingerprint shiroFingerprint) {
         this.callbacks = callbacks;
         this.helpers = callbacks.getHelpers();
+        this.stdout = new PrintWriter(callbacks.getStdout(), true);
 
         this.baseRequestResponse = baseRequestResponse;
 
@@ -90,6 +92,28 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         String newHttpBody1 = this.getHttpResponseBody(newHttpRequestResponse1);
         double htmlSimilarityRatio1 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody1);
         if (this.similarityRatio > htmlSimilarityRatio1) {
+            URL newHttpRequestUrl1 = this.helpers.analyzeRequest(newHttpRequestResponse1).getUrl();
+            String newHttpRequestMethod1 = this.helpers.analyzeRequest(newHttpRequestResponse1.getRequest()).getMethod();
+            int newHttpResponseStatusCode1 = this.helpers.analyzeResponse(newHttpRequestResponse1.getResponse()).getStatusCode();
+
+            this.stdout.println("");
+            this.stdout.println("===========页面相似度-debug============");
+            this.stdout.println("看到这个说明原请求与发送payload的新请求页面相似度低于“表示匹配成功的页面相似度”");
+            this.stdout.println("出现这个可能是因为请求太快waf封了");
+            this.stdout.println("也可能是相似度匹配有bug");
+            this.stdout.println("请联系作者进行排查");
+            this.stdout.println("相关变量: htmlSimilarityRatio1");
+            this.stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
+            this.stdout.println(String.format("表示匹配成功的页面相似度: %s", this.similarityRatio));
+            this.stdout.println(String.format("实际两个页面的相似度: %s", htmlSimilarityRatio1));
+            this.stdout.println(String.format("url: %s", newHttpRequestUrl1));
+            this.stdout.println(String.format("请求方法: %s", newHttpRequestMethod1));
+            this.stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode1));
+            this.stdout.println(String.format("对应的Cookie键: %s", this.rememberMeCookieName));
+            this.stdout.println(String.format("对应的Cookie值: %s", correctRememberMe));
+            this.stdout.println(String.format("Shiro加密key: %s", key));
+            this.stdout.println("===================================");
+            this.stdout.println("");
             return;
         }
 
@@ -102,13 +126,36 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         // 二次验证-这样可以减少因为waf造成的大量误报
         // 使用一个必定错误的key-发送一个肯定不会被此shiro框架成功解密的请求
         // 密钥 errorKey 然后 aes 加密 == U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=
-        String errorRememberMe = this.shiroRememberMeEncrypt("U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=", exp);
+        String errorKey = "U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=";
+        String errorRememberMe = this.shiroRememberMeEncrypt(errorKey, exp);
         IHttpRequestResponse newHttpRequestResponse2 = this.getNewHttpRequestResponse(errorRememberMe, 3);
 
         // 判断shiro指纹的请求与当前必定错误的请求相似度是否差不多一致
         String newHttpBody2 = this.getHttpResponseBody(newHttpRequestResponse2);
         double htmlSimilarityRatio2 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody2);
         if (this.similarityRatio > htmlSimilarityRatio2) {
+            URL newHttpRequestUrl2 = this.helpers.analyzeRequest(newHttpRequestResponse2).getUrl();
+            String newHttpRequestMethod2 = this.helpers.analyzeRequest(newHttpRequestResponse2.getRequest()).getMethod();
+            int newHttpResponseStatusCode2 = this.helpers.analyzeResponse(newHttpRequestResponse2.getResponse()).getStatusCode();
+
+            this.stdout.println("");
+            this.stdout.println("===========页面相似度-debug============");
+            this.stdout.println("看到这个说明原请求与发送payload的新请求页面相似度低于“表示匹配成功的页面相似度”");
+            this.stdout.println("出现这个可能是因为请求太快waf封了");
+            this.stdout.println("也可能是相似度匹配有bug");
+            this.stdout.println("请联系作者进行排查");
+            this.stdout.println("相关变量: htmlSimilarityRatio2");
+            this.stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
+            this.stdout.println(String.format("表示匹配成功的页面相似度: %s", this.similarityRatio));
+            this.stdout.println(String.format("实际两个页面的相似度: %s", htmlSimilarityRatio1));
+            this.stdout.println(String.format("url: %s", newHttpRequestUrl2));
+            this.stdout.println(String.format("请求方法: %s", newHttpRequestMethod2));
+            this.stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode2));
+            this.stdout.println(String.format("对应的Cookie键: %s", this.rememberMeCookieName));
+            this.stdout.println(String.format("对应的Cookie值: %s", errorRememberMe));
+            this.stdout.println(String.format("Shiro加密key: %s", errorKey));
+            this.stdout.println("===================================");
+            this.stdout.println("");
             return;
         }
 
@@ -198,6 +245,10 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
      * @return double
      */
     private static double getSimilarityRatio(String str, String target) {
+        if (str.equals(target)) {
+            return 1;
+        }
+
         int d[][]; // 矩阵
         int n = str.length();
         int m = target.length();
@@ -311,24 +362,22 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         String newHttpRequestMethod = this.helpers.analyzeRequest(newHttpRequestResponse.getRequest()).getMethod();
         int newHttpResponseStatusCode = this.helpers.analyzeResponse(newHttpRequestResponse.getResponse()).getStatusCode();
 
-        PrintWriter stdout = new PrintWriter(this.callbacks.getStdout(), true);
-
-        stdout.println("");
-        stdout.println("===========shiro加密key详情============");
-        stdout.println("你好呀~ (≧ω≦*)喵~");
-        stdout.println("这边检测到有一个站点使用了 shiro框架 喵~");
-        stdout.println(String.format(
+        this.stdout.println("");
+        this.stdout.println("===========shiro加密key详情============");
+        this.stdout.println("你好呀~ (≧ω≦*)喵~");
+        this.stdout.println("这边检测到有一个站点使用了 shiro框架 喵~");
+        this.stdout.println(String.format(
                         "注意: 该检测方法, 正确的时候响应包的 %s 会消失, 这表示当前key是正确的",
                         this.rememberMeCookieName));
-        stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
-        stdout.println(String.format("url: %s", newHttpRequestUrl));
-        stdout.println(String.format("请求方法: %s", newHttpRequestMethod));
-        stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode));
-        stdout.println(String.format("对应的Cookie键: %s", this.rememberMeCookieName));
-        stdout.println(String.format("对应的Cookie值: %s", this.getNewRequestRememberMeCookieValue()));
-        stdout.println(String.format("Shiro加密key: %s", this.getCipherKey()));
-        stdout.println("详情请查看-Burp Scanner模块-Issue activity界面");
-        stdout.println("===================================");
-        stdout.println("");
+        this.stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
+        this.stdout.println(String.format("url: %s", newHttpRequestUrl));
+        this.stdout.println(String.format("请求方法: %s", newHttpRequestMethod));
+        this.stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode));
+        this.stdout.println(String.format("对应的Cookie键: %s", this.rememberMeCookieName));
+        this.stdout.println(String.format("对应的Cookie值: %s", this.getNewRequestRememberMeCookieValue()));
+        this.stdout.println(String.format("Shiro加密key: %s", this.getCipherKey()));
+        this.stdout.println("详情请查看-Burp Scanner模块-Issue activity界面");
+        this.stdout.println("===================================");
+        this.stdout.println("");
     }
 }
