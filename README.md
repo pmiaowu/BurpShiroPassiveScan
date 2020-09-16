@@ -101,3 +101,15 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 ![](./Docs/images/13.png)
 
 ![](./Docs/images/14.png)
+
+# tag界面查看漏洞情况
+
+现在可以通过tag界面查看漏洞情况了
+
+分别会返回
+
+- waiting for test results = 扫描shiro key 中
+- [-] not found shiro key = 没有扫描出 shiro key
+- [+] found shiro key: xxxxxx = 扫描出了 shiro key
+
+![](./Docs/images/15.png)
