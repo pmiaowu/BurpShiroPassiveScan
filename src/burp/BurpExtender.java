@@ -14,11 +14,12 @@ import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.6.4 beta";
+    public static String VERSION = "1.6.5 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
     private PrintWriter stdout;
+    private Tags tags;
 
     private DomainNameRepeat domainNameRepeat;
     private UrlRepeat urlRepeat;
@@ -31,6 +32,9 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
 
         this.domainNameRepeat = new DomainNameRepeat();
         this.urlRepeat = new UrlRepeat();
+        
+        // 标签界面
+        this.tags = new Tags(callbacks, NAME);
 
         callbacks.setExtensionName(NAME);
         callbacks.registerScannerCheck(this);
@@ -96,6 +100,18 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         // shiro指纹检测-控制台报告输出
         shiroFingerprint.run().consoleExport();
 
+        // 新增任务至任务栏面板
+        IHttpRequestResponse shiroFingerprintHttpRequestResponse = shiroFingerprint.run().getHttpRequestResponse();
+        byte[] shiroFingerprintResponse = shiroFingerprintHttpRequestResponse.getResponse();
+        int tagId = this.tags.add(
+                shiroFingerprint.run().getExtensionName(),
+                this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
+                baseRequestUrl.toString(),
+                this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
+                "waiting for test results",
+                shiroFingerprintHttpRequestResponse
+        );
+
         // shiro加密key检测-模块运行
         ShiroCipherKey shiroCipherKey = new ShiroCipherKey(
                 this.callbacks,
@@ -105,6 +121,16 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
 
         // 检测是否爆破出了shiro加密key
         if (!shiroCipherKey.run().isShiroCipherKeyExists()) {
+            // 未检查出来key-更新任务状态至任务栏面板
+            this.tags.save(
+                    tagId,
+                    shiroCipherKey.run().getExtensionName(),
+                    this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
+                    baseRequestUrl.toString(),
+                    this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
+                    "[-] not found shiro key",
+                    shiroFingerprintHttpRequestResponse
+            );
             return issues;
         }
 
@@ -113,6 +139,19 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
 
         // shiro加密key-控制台报告输出
         shiroCipherKey.run().consoleExport();
+
+        // 检查出来key-更新任务状态至任务栏面板
+        IHttpRequestResponse shiroCipherKeyRequestResponse = shiroCipherKey.run().getHttpRequestResponse();
+        byte[] shiroCipherKeyResponse = shiroCipherKeyRequestResponse.getResponse();
+        this.tags.save(
+                tagId,
+                shiroCipherKey.run().getExtensionName(),
+                this.helpers.analyzeRequest(shiroCipherKeyRequestResponse).getMethod(),
+                baseRequestUrl.toString(),
+                this.helpers.analyzeResponse(shiroCipherKeyResponse).getStatusCode() + "",
+                "[+] found shiro key:" + shiroCipherKey.run().getCipherKey(),
+                shiroCipherKeyRequestResponse
+        );
 
         return issues;
     }
