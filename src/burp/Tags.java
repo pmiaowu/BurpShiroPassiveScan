@@ -1,7 +1,9 @@
 package burp;
 
 import java.awt.Component;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -96,7 +98,7 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
     @Override
     public int getColumnCount()
     {
-        return 6;
+        return 8;
     }
 
     @Override
@@ -114,6 +116,10 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
                 return "statusCode";
             case 5:
                 return "issue";
+            case 6:
+                return "startTime";
+            case 7:
+                return "endTime";
         }
         return null;
     }
@@ -141,6 +147,10 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
                 return datas.statusCode;
             case 5:
                 return datas.issue;
+            case 6:
+                return datas.startTime;
+            case 7:
+                return datas.endTime;
         }
         return null;
     }
@@ -176,7 +186,10 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
     public int add(String extensionMethod, String requestMethod, String url,
                    String statusCode, String issue, IHttpRequestResponse requestResponse) {
         synchronized (this.Udatas) {
-            // 新增任务至任务栏面板
+            Date d = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String startTime = sdf.format(d);
+
             int id = this.Udatas.size();
             this.Udatas.add(
                 new TablesData(
@@ -186,7 +199,9 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
                         url,
                         statusCode,
                         issue,
-                        requestResponse
+                        requestResponse,
+                        startTime,
+                        ""
                 )
             );
             fireTableRowsInserted(id,id);
@@ -208,6 +223,14 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
     public int save(int id, String extensionMethod, String requestMethod,
                     String url, String statusCode, String issue,
                     IHttpRequestResponse requestResponse) {
+
+        Tags.TablesData dataEntry = Tags.this.Udatas.get(id);
+        String startTime = dataEntry.startTime;
+
+        Date d = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String endTime = sdf.format(d);
+
         synchronized (this.Udatas) {
             this.Udatas.set(
                 id,
@@ -218,7 +241,9 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
                         url,
                         statusCode,
                         issue,
-                        requestResponse
+                        requestResponse,
+                        startTime,
+                        endTime
                 )
             );
             fireTableRowsUpdated(id,id);
@@ -254,10 +279,12 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
         final String statusCode;
         final String issue;
         final IHttpRequestResponse requestResponse;
+        final String startTime;
+        final String endTime;
 
         public TablesData(int id, String extensionMethod, String requestMethod,
                           String url, String statusCode, String issue,
-                          IHttpRequestResponse requestResponse) {
+                          IHttpRequestResponse requestResponse, String startTime, String endTime) {
             this.id = id;
             this.extensionMethod = extensionMethod;
             this.requestMethod = requestMethod;
@@ -265,6 +292,8 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
             this.statusCode = statusCode;
             this.issue = issue;
             this.requestResponse = requestResponse;
+            this.startTime = startTime;
+            this.endTime = endTime;
         }
     }
 }
