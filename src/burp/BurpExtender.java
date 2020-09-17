@@ -14,7 +14,7 @@ import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.6.6 beta";
+    public static String VERSION = "1.6.7 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -100,7 +100,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         // shiro指纹检测-控制台报告输出
         shiroFingerprint.run().consoleExport();
 
-        // 新增任务至任务栏面板
+        // 新增shiro key 扫描任务至任务栏面板
         IHttpRequestResponse shiroFingerprintHttpRequestResponse = shiroFingerprint.run().getHttpRequestResponse();
         byte[] shiroFingerprintResponse = shiroFingerprintHttpRequestResponse.getResponse();
         int tagId = this.tags.add(
@@ -121,6 +121,9 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
 
         // 检测是否爆破出了shiro加密key
         if (!shiroCipherKey.run().isShiroCipherKeyExists()) {
+            // 任务完成情况控制台输出
+            this.taskCompletionConsoleExport(baseRequestResponse);
+
             // 未检查出来key-更新任务状态至任务栏面板
             this.tags.save(
                     tagId,
@@ -140,6 +143,9 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         // shiro加密key-控制台报告输出
         shiroCipherKey.run().consoleExport();
 
+        // 任务完成情况控制台输出
+        this.taskCompletionConsoleExport(baseRequestResponse);
+
         // 检查出来key-更新任务状态至任务栏面板
         IHttpRequestResponse shiroCipherKeyRequestResponse = shiroCipherKey.run().getHttpRequestResponse();
         byte[] shiroCipherKeyResponse = shiroCipherKeyRequestResponse.getResponse();
@@ -154,6 +160,16 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         );
 
         return issues;
+    }
+
+    /**
+     * 任务完成情况控制台输出
+     */
+    private void taskCompletionConsoleExport(IHttpRequestResponse requestResponse) {
+        URL httpRequestUrl = this.helpers.analyzeRequest(requestResponse).getUrl();
+        this.stdout.println("============shiro-key扫描完毕================");
+        this.stdout.println(String.format("url: %s", httpRequestUrl));
+        this.stdout.println("========================================");
     }
 
     @Override

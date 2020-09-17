@@ -75,17 +75,6 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
             this.cipherKeyDetection(key, exp);
         }
-        this.taskCompletionConsoleExport();
-    }
-
-    /**
-     * 任务完成情况控制台输出
-     */
-    private void taskCompletionConsoleExport() {
-        URL baseHttpRequestUrl = this.helpers.analyzeRequest(this.baseRequestResponse).getUrl();
-        this.stdout.println("============shiro-key扫描完毕================");
-        this.stdout.println(String.format("url: %s", baseHttpRequestUrl));
-        this.stdout.println("========================================");
     }
 
     /**
