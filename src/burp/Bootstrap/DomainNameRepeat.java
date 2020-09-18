@@ -23,6 +23,12 @@ public class DomainNameRepeat {
         this.getDomainNameMap().put(domainName, 1);
     }
 
+    public void del(String domainName) {
+        if (this.getDomainNameMap().get(domainName) != null) {
+            this.getDomainNameMap().remove(domainName);
+        }
+    }
+
     /**
      * 重复主机的检测
      * true  表示重复

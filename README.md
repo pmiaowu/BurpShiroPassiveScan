@@ -109,6 +109,8 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 分别会返回
 
 - waiting for test results = 扫描shiro key 中
+- shiro key scan out of memory error = 扫描shiro key时发生内存错误
+- shiro key scan diff page too many errors = 扫描shiro key时页面之间的相似度比对失败太多
 - [-] not found shiro key = 没有扫描出 shiro key
 - [+] found shiro key: xxxxxx = 扫描出了 shiro key
 

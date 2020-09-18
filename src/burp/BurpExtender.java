@@ -11,10 +11,12 @@ import burp.Bootstrap.UrlRepeat;
 import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 
+import burp.CustomErrorException.DiffPageException;
+
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.6.7 beta";
+    public static String VERSION = "1.6.8 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -53,6 +55,8 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
         List<IScanIssue> issues = new ArrayList<IScanIssue>();
+
+        URL baseHttpRequestUrl = this.helpers.analyzeRequest(baseRequestResponse).getUrl();
 
         // 基础请求域名构造
         String baseRequestProtocol = baseRequestResponse.getHttpService().getProtocol();
@@ -112,54 +116,116 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
                 shiroFingerprintHttpRequestResponse
         );
 
-        // shiro加密key检测-模块运行
-        ShiroCipherKey shiroCipherKey = new ShiroCipherKey(
-                this.callbacks,
-                baseRequestResponse,
-                shiroFingerprint,
-                "ShiroCipherKeyMethod2");
+        try {
+            // shiro加密key检测-模块运行
+            ShiroCipherKey shiroCipherKey = new ShiroCipherKey(
+                    this.callbacks,
+                    baseRequestResponse,
+                    shiroFingerprint,
+                    "ShiroCipherKeyMethod2");
 
-        // 检测是否爆破出了shiro加密key
-        if (!shiroCipherKey.run().isShiroCipherKeyExists()) {
+            // 检测是否爆破出了shiro加密key
+            if (!shiroCipherKey.run().isShiroCipherKeyExists()) {
+                // 任务完成情况控制台输出
+                this.taskCompletionConsoleExport(baseRequestResponse);
+
+                // 未检查出来key-更新任务状态至任务栏面板
+                this.tags.save(
+                        tagId,
+                        shiroCipherKey.run().getExtensionName(),
+                        this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
+                        baseRequestUrl.toString(),
+                        this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
+                        "[-] not found shiro key",
+                        shiroFingerprintHttpRequestResponse
+                );
+                return issues;
+            }
+
+            // shiro加密key-报告输出
+            issues.add(shiroCipherKey.run().export());
+
+            // shiro加密key-控制台报告输出
+            shiroCipherKey.run().consoleExport();
+
             // 任务完成情况控制台输出
             this.taskCompletionConsoleExport(baseRequestResponse);
 
-            // 未检查出来key-更新任务状态至任务栏面板
+            // 检查出来key-更新任务状态至任务栏面板
+            IHttpRequestResponse shiroCipherKeyRequestResponse = shiroCipherKey.run().getHttpRequestResponse();
+            byte[] shiroCipherKeyResponse = shiroCipherKeyRequestResponse.getResponse();
             this.tags.save(
                     tagId,
                     shiroCipherKey.run().getExtensionName(),
+                    this.helpers.analyzeRequest(shiroCipherKeyRequestResponse).getMethod(),
+                    baseRequestUrl.toString(),
+                    this.helpers.analyzeResponse(shiroCipherKeyResponse).getStatusCode() + "",
+                    "[+] found shiro key:" + shiroCipherKey.run().getCipherKey(),
+                    shiroCipherKeyRequestResponse
+            );
+        } catch (OutOfMemoryError e) {
+            /**
+             * 如果这里报错了,大概率是因为进行相似度匹配的时候,匹配的两个字符串太长了
+             * 超过了 new int[] 数组的长度导致的
+             * 报错的文件路径"src/burp/Bootstrap/DiffPage.java"文件 getSimilarityRatio()方法
+             * 里面的 "d = new int[n + 1][m + 1];" 长度溢出了
+             * 那么只能让他换个url重跑了
+             */
+            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
+            this.domainNameRepeat.del(baseRequestDomainName);
+
+            // 通知控制台报错
+            this.stdout.println("========shiro-key模块错误-内存溢出============");
+            this.stdout.println(String.format("url: %s", baseHttpRequestUrl));
+            this.stdout.println("请换该站点其它url重新访问");
+            this.stdout.println("========================================");
+
+            // 本次任务执行有问题-更新任务状态至任务栏面板
+            this.tags.save(
+                    tagId,
+                    shiroFingerprint.run().getExtensionName(),
                     this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
                     baseRequestUrl.toString(),
                     this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
-                    "[-] not found shiro key",
+                    "shiro key scan out of memory error",
                     shiroFingerprintHttpRequestResponse
             );
+
+            // 报致命异常停止本次执行
+            throw new RuntimeException(e);
+        } catch (DiffPageException e) {
+            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
+            this.domainNameRepeat.del(baseRequestDomainName);
+
+            // 通知控制台报错
+            this.stdout.println("========shiro-key模块错误-相似度匹配多次失败============");
+            this.stdout.println("看到这个说明原请求与发送payload的新请求页面相似度低于“表示匹配成功的页面相似度”");
+            this.stdout.println("出现这个可能是因为请求太快waf封了");
+            this.stdout.println("也可能是相似度匹配有bug");
+            this.stdout.println("请联系作者进行排查");
+            this.stdout.println(String.format("url: %s", baseHttpRequestUrl));
+            this.stdout.println("请换该站点其它url重新访问");
+            this.stdout.println("========================================");
+
+            // 本次任务执行有问题-更新任务状态至任务栏面板
+            this.tags.save(
+                    tagId,
+                    shiroFingerprint.run().getExtensionName(),
+                    this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
+                    baseRequestUrl.toString(),
+                    this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
+                    "shiro key scan diff page too many errors",
+                    shiroFingerprintHttpRequestResponse
+            );
+
+            // 报致命异常停止本次执行
+            throw new RuntimeException(e);
+        } finally {
+            // 输出跑到的问题给burp
             return issues;
         }
-
-        // shiro加密key-报告输出
-        issues.add(shiroCipherKey.run().export());
-
-        // shiro加密key-控制台报告输出
-        shiroCipherKey.run().consoleExport();
-
-        // 任务完成情况控制台输出
-        this.taskCompletionConsoleExport(baseRequestResponse);
-
-        // 检查出来key-更新任务状态至任务栏面板
-        IHttpRequestResponse shiroCipherKeyRequestResponse = shiroCipherKey.run().getHttpRequestResponse();
-        byte[] shiroCipherKeyResponse = shiroCipherKeyRequestResponse.getResponse();
-        this.tags.save(
-                tagId,
-                shiroCipherKey.run().getExtensionName(),
-                this.helpers.analyzeRequest(shiroCipherKeyRequestResponse).getMethod(),
-                baseRequestUrl.toString(),
-                this.helpers.analyzeResponse(shiroCipherKeyResponse).getStatusCode() + "",
-                "[+] found shiro key:" + shiroCipherKey.run().getCipherKey(),
-                shiroCipherKeyRequestResponse
-        );
-
-        return issues;
     }
 
     /**

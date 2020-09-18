@@ -28,6 +28,18 @@ public class UrlRepeat {
         this.getRequestMethodAndUrlMap().put(requestMethod + " " + url, 1);
     }
 
+    public void delMethodAndUrl(String requestMethod, String url) {
+        if (requestMethod == null || requestMethod.length() <= 0) {
+            return;
+        }
+
+        if (url == null || url.length() <= 0) {
+            return;
+        }
+
+        this.getRequestMethodAndUrlMap().remove(requestMethod + " " + url);
+    }
+
     /**
      * 重复url的检测
      * true  表示重复

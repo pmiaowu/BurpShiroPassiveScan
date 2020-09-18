@@ -3,6 +3,11 @@ package burp.Application.ShiroCipherKeyDetection.ExtensionMethod;
 import burp.*;
 
 import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
+
+import burp.Bootstrap.DiffPage;
+
+import burp.CustomErrorException.DiffPageException;
+
 import org.apache.shiro.codec.Base64;
 import org.apache.shiro.crypto.AesCipherService;
 import org.apache.shiro.subject.SimplePrincipalCollection;
@@ -28,7 +33,13 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
     private String newRequestRememberMeCookieValue;
 
+    private DiffPage diffPage;
+
     private double similarityRatio = 0.7;
+
+    // 相似度匹配算法,匹配失败的次数
+    private int errorNumber = 0;
+    private int endErrorNumber = 30;
 
     public ShiroCipherKeyMethod2(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
@@ -52,6 +63,8 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
         this.setExtensionName("ShiroCipherKeyMethod2");
 
+        this.diffPage = new DiffPage();
+
         try {
             this.runExtension();
         } catch (IOException e) {
@@ -73,7 +86,18 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
                 break;
             }
 
+            if (this.errorNumber >= this.endErrorNumber) {
+                break;
+            }
+
             this.cipherKeyDetection(key, exp);
+        }
+
+        // 如果 相似度匹配算法,匹配失败的次数,超过30次,那么就可以退出了
+        // 因为这种情况下,大概率触发waf规则了, 那么就没必要跑剩下的了
+        if (this.errorNumber >= this.endErrorNumber) {
+            // 抛异常结束任务
+            throw new DiffPageException("shiro key scan too many errors");
         }
     }
 
@@ -90,30 +114,9 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
         // 判断shiro指纹的请求与当前可能正确key的请求相似度是否差不多一致
         String newHttpBody1 = this.getHttpResponseBody(newHttpRequestResponse1);
-        double htmlSimilarityRatio1 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody1);
+        double htmlSimilarityRatio1 = this.diffPage.getRatio(shiroFingerprintHttpBody, newHttpBody1);
         if (this.similarityRatio > htmlSimilarityRatio1) {
-            URL newHttpRequestUrl1 = this.helpers.analyzeRequest(newHttpRequestResponse1).getUrl();
-            String newHttpRequestMethod1 = this.helpers.analyzeRequest(newHttpRequestResponse1.getRequest()).getMethod();
-            int newHttpResponseStatusCode1 = this.helpers.analyzeResponse(newHttpRequestResponse1.getResponse()).getStatusCode();
-
-            this.stdout.println("");
-            this.stdout.println("===========页面相似度-debug============");
-            this.stdout.println("看到这个说明原请求与发送payload的新请求页面相似度低于“表示匹配成功的页面相似度”");
-            this.stdout.println("出现这个可能是因为请求太快waf封了");
-            this.stdout.println("也可能是相似度匹配有bug");
-            this.stdout.println("请联系作者进行排查");
-            this.stdout.println("相关变量: htmlSimilarityRatio1");
-            this.stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
-            this.stdout.println(String.format("表示匹配成功的页面相似度: %s", this.similarityRatio));
-            this.stdout.println(String.format("实际两个页面的相似度: %s", htmlSimilarityRatio1));
-            this.stdout.println(String.format("url: %s", newHttpRequestUrl1));
-            this.stdout.println(String.format("请求方法: %s", newHttpRequestMethod1));
-            this.stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode1));
-            this.stdout.println(String.format("对应的Cookie键: %s", this.rememberMeCookieName));
-            this.stdout.println(String.format("对应的Cookie值: %s", correctRememberMe));
-            this.stdout.println(String.format("Shiro加密key: %s", key));
-            this.stdout.println("===================================");
-            this.stdout.println("");
+            this.errorNumber++;
             return;
         }
 
@@ -132,30 +135,9 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
         // 判断shiro指纹的请求与当前必定错误的请求相似度是否差不多一致
         String newHttpBody2 = this.getHttpResponseBody(newHttpRequestResponse2);
-        double htmlSimilarityRatio2 = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody2);
+        double htmlSimilarityRatio2 = this.diffPage.getRatio(shiroFingerprintHttpBody, newHttpBody2);
         if (this.similarityRatio > htmlSimilarityRatio2) {
-            URL newHttpRequestUrl2 = this.helpers.analyzeRequest(newHttpRequestResponse2).getUrl();
-            String newHttpRequestMethod2 = this.helpers.analyzeRequest(newHttpRequestResponse2.getRequest()).getMethod();
-            int newHttpResponseStatusCode2 = this.helpers.analyzeResponse(newHttpRequestResponse2.getResponse()).getStatusCode();
-
-            this.stdout.println("");
-            this.stdout.println("===========页面相似度-debug============");
-            this.stdout.println("看到这个说明原请求与发送payload的新请求页面相似度低于“表示匹配成功的页面相似度”");
-            this.stdout.println("出现这个可能是因为请求太快waf封了");
-            this.stdout.println("也可能是相似度匹配有bug");
-            this.stdout.println("请联系作者进行排查");
-            this.stdout.println("相关变量: htmlSimilarityRatio2");
-            this.stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
-            this.stdout.println(String.format("表示匹配成功的页面相似度: %s", this.similarityRatio));
-            this.stdout.println(String.format("实际两个页面的相似度: %s", htmlSimilarityRatio1));
-            this.stdout.println(String.format("url: %s", newHttpRequestUrl2));
-            this.stdout.println(String.format("请求方法: %s", newHttpRequestMethod2));
-            this.stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode2));
-            this.stdout.println(String.format("对应的Cookie键: %s", this.rememberMeCookieName));
-            this.stdout.println(String.format("对应的Cookie值: %s", errorRememberMe));
-            this.stdout.println(String.format("Shiro加密key: %s", errorKey));
-            this.stdout.println("===================================");
-            this.stdout.println("");
+            this.errorNumber++;
             return;
         }
 
@@ -209,7 +191,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         String shiroFingerprintHttpBody = this.getHttpResponseBody(this.shiroFingerprintHttpRequestResponse);
         String newHttpBody = this.getHttpResponseBody(newHttpRequestResponse);
 
-        double htmlSimilarityRatio = this.getSimilarityRatio(shiroFingerprintHttpBody, newHttpBody);
+        double htmlSimilarityRatio = this.diffPage.getRatio(shiroFingerprintHttpBody, newHttpBody);
         if (this.similarityRatio > htmlSimilarityRatio) {
             return this.getNewHttpRequestResponse(rememberMe, remainingRunNumber);
         }
@@ -236,55 +218,6 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
             throw new RuntimeException(e);
         }
         return httpBody;
-    }
-
-    /**
-     * 两个字符串相似度匹配
-     * @param str
-     * @param target
-     * @return double
-     */
-    private static double getSimilarityRatio(String str, String target) {
-        if (str.equals(target)) {
-            return 1;
-        }
-
-        int d[][]; // 矩阵
-        int n = str.length();
-        int m = target.length();
-        int i; // 遍历str的
-        int j; // 遍历target的
-        char ch1; // str的
-        char ch2; // target的
-        int temp; // 记录相同字符,在某个矩阵位置值的增量,不是0就是1
-        if (n == 0 || m == 0) {
-            return 0;
-        }
-        d = new int[n + 1][m + 1];
-        for (i = 0; i <= n; i++) { // 初始化第一列
-            d[i][0] = i;
-        }
-
-        for (j = 0; j <= m; j++) { // 初始化第一行
-            d[0][j] = j;
-        }
-
-        for (i = 1; i <= n; i++) { // 遍历str
-            ch1 = str.charAt(i - 1);
-            // 去匹配target
-            for (j = 1; j <= m; j++) {
-                ch2 = target.charAt(j - 1);
-                if (ch1 == ch2 || ch1 == ch2 + 32 || ch1 + 32 == ch2) {
-                    temp = 0;
-                } else {
-                    temp = 1;
-                }
-                // 左边+1,上边+1, 左上角+temp取最小
-                d[i][j] = Math.min(Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1), d[i - 1][j - 1] + temp);
-            }
-        }
-
-        return (1 - (double) d[n][m] / Math.max(str.length(), target.length()));
     }
 
     /**
