@@ -12,11 +12,12 @@ import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 import burp.Application.ShiroCipherKeyDetection.ShiroCipherKey;
 
 import burp.CustomErrorException.DiffPageException;
+import burp.CustomErrorException.TaskTimeoutException;
 
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.6.9 beta";
+    public static String VERSION = "1.7.0 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -217,6 +218,30 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
                     baseRequestUrl.toString(),
                     this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
                     "shiro key scan diff page too many errors",
+                    shiroFingerprintHttpRequestResponse
+            );
+
+            // 报致命异常停止本次执行
+            throw new RuntimeException(e);
+        } catch (TaskTimeoutException e) {
+            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
+            this.domainNameRepeat.del(baseRequestDomainName);
+
+            // 通知控制台报错
+            this.stdout.println("========shiro-key模块错误-程序运行超时============");
+            this.stdout.println(String.format("url: %s", baseHttpRequestUrl));
+            this.stdout.println("请换该站点其它url重新访问");
+            this.stdout.println("========================================");
+
+            // 本次任务执行有问题-更新任务状态至任务栏面板
+            this.tags.save(
+                    tagId,
+                    shiroFingerprint.run().getExtensionName(),
+                    this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
+                    baseRequestUrl.toString(),
+                    this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
+                    "shiro key scan task timeout",
                     shiroFingerprintHttpRequestResponse
             );
 

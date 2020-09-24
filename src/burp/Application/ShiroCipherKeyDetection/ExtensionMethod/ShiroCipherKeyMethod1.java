@@ -3,7 +3,9 @@ package burp.Application.ShiroCipherKeyDetection.ExtensionMethod;
 import java.net.URL;
 import java.util.ArrayList;
 import java.io.PrintWriter;
+import java.util.Date;
 
+import burp.CustomErrorException.TaskTimeoutException;
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
@@ -17,12 +19,18 @@ import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 
 import burp.DnsLogModule.DnsLog;
 import burp.Bootstrap.ShiroUrlDns;
+import burp.Bootstrap.CustomHelpers;
 
 public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
 
+    private CustomHelpers customHelpers;
+
     private IHttpRequestResponse baseRequestResponse;
+
+    private Date startDate;
+    private int maxExecutionTime;
 
     private String[] keys;
 
@@ -38,9 +46,13 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
     public ShiroCipherKeyMethod1(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
                                  String[] keys,
-                                 ShiroFingerprint shiroFingerprint) {
+                                 ShiroFingerprint shiroFingerprint,
+                                 Date startDate,
+                                 int maxExecutionTime) {
         this.callbacks = callbacks;
         this.helpers = callbacks.getHelpers();
+
+        this.customHelpers = new CustomHelpers();
 
         this.baseRequestResponse = baseRequestResponse;
 
@@ -48,6 +60,9 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
 
         this.keys = keys;
         this.rememberMeCookieName = shiroFingerprint.run().getResponseDefaultRememberMeCookieName();
+
+        this.startDate = startDate;
+        this.maxExecutionTime = maxExecutionTime;
 
         this.setExtensionName("ShiroCipherKeyMethod1");
 
@@ -60,7 +75,7 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
         }
 
         // 加密key检测
-        for (String key : keys) {
+        for (String key : this.keys) {
             // 说明检测到shiro key了
             if (this.isShiroCipherKeyExists()) {
                 return;
@@ -74,6 +89,14 @@ public class ShiroCipherKeyMethod1 extends ShiroCipherKeyMethodAbstract {
                 if (this.dnsLog.run().getBodyContent().length() >= 1) {
                     break;
                 }
+            }
+
+            // 判断程序是否运行超时
+            int startTime = this.customHelpers.getSecondTimestamp(this.startDate);
+            int currentTime = this.customHelpers.getSecondTimestamp(new Date());
+            int runTime = currentTime - startTime;
+            if (runTime >= this.maxExecutionTime) {
+                throw new TaskTimeoutException("shiro key scan task timeout");
             }
 
             this.cipherKeyDetection(key);

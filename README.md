@@ -109,10 +109,13 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 分别会返回
 
 - waiting for test results = 扫描shiro key 中
-- shiro key scan out of memory error = 扫描shiro key时发生内存错误
-- shiro key scan diff page too many errors = 扫描shiro key时页面之间的相似度比对失败太多
-- shiro key scan unknown error = 扫描shiro key 时发生未知错误
+- shiro key scan out of memory error = 扫描shiro key时,发生内存错误
+- shiro key scan diff page too many errors = 扫描shiro key时,页面之间的相似度比对失败太多
+- shiro key scan task timeout = 扫描shiro key时,任务执行超时
+- shiro key scan unknown error = 扫描shiro key时,发生未知错误
 - [-] not found shiro key = 没有扫描出 shiro key
 - [+] found shiro key: xxxxxx = 扫描出了 shiro key
+
+注意: 发生异常错误的时候,不用担心下次不会扫描了,下次访问该站点的时候依然会尝试进行shiro key扫描,直到扫描完毕为止
 
 ![](./Docs/images/15.png)

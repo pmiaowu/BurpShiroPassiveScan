@@ -6,9 +6,18 @@ import burp.Application.ShiroCipherKeyDetection.ExtensionMethod.*;
 import burp.IBurpExtenderCallbacks;
 import burp.IHttpRequestResponse;
 
+import java.util.Date;
+
 public class ShiroCipherKey {
 
     private ShiroCipherKeyMethodInterface shiroCipherKeyMethod;
+
+    // 该模块启动日期
+    private Date startDate = new Date();
+
+    // 程序最大执行时间,单位为秒
+    // 会根据payload的添加而添加
+    private int maxExecutionTime = 120;
 
     public ShiroCipherKey(IBurpExtenderCallbacks callbacks,
                           IHttpRequestResponse baseRequestResponse,
@@ -62,12 +71,20 @@ public class ShiroCipherKey {
                 "NsZXjXVklWPZwOfkvk6kUA==", "GAevYnznvgNCURavBhCr1w==",
         };
 
+        // 获得最终的程序最大执行时间
+        int keyLength = keys.length;
+        if (keyLength > 20) {
+            this.maxExecutionTime += (keyLength - 20) * 2;
+        }
+
         if (callClassName.equals("ShiroCipherKeyMethod1")) {
             ShiroCipherKeyMethod1 shiroCipherKey = new ShiroCipherKeyMethod1(
                     callbacks,
                     baseRequestResponse,
                     keys,
-                    shiroFingerprint);
+                    shiroFingerprint,
+                    this.startDate,
+                    this.maxExecutionTime);
             this.shiroCipherKeyMethod = shiroCipherKey;
             return this.shiroCipherKeyMethod;
         }
@@ -77,7 +94,9 @@ public class ShiroCipherKey {
                     callbacks,
                     baseRequestResponse,
                     keys,
-                    shiroFingerprint);
+                    shiroFingerprint,
+                    this.startDate,
+                    this.maxExecutionTime);
             this.shiroCipherKeyMethod = shiroCipherKey;
             return this.shiroCipherKeyMethod;
         }

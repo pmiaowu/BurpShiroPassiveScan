@@ -5,9 +5,11 @@ import burp.*;
 import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 
 import burp.Bootstrap.DiffPage;
+import burp.Bootstrap.CustomHelpers;
 
 import burp.CustomErrorException.DiffPageException;
 
+import burp.CustomErrorException.TaskTimeoutException;
 import org.apache.shiro.codec.Base64;
 import org.apache.shiro.crypto.AesCipherService;
 import org.apache.shiro.subject.SimplePrincipalCollection;
@@ -15,13 +17,19 @@ import org.apache.shiro.util.ByteSource;
 
 import java.io.*;
 import java.net.URL;
+import java.util.Date;
 
 public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
     private PrintWriter stdout;
 
+    private CustomHelpers customHelpers;
+
     private IHttpRequestResponse baseRequestResponse;
+
+    private Date startDate;
+    private int maxExecutionTime;
 
     private String[] keys;
 
@@ -44,10 +52,14 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
     public ShiroCipherKeyMethod2(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
                                  String[] keys,
-                                 ShiroFingerprint shiroFingerprint) {
+                                 ShiroFingerprint shiroFingerprint,
+                                 Date startDate,
+                                 int maxExecutionTime) {
         this.callbacks = callbacks;
         this.helpers = callbacks.getHelpers();
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
+
+        this.customHelpers = new CustomHelpers();
 
         this.baseRequestResponse = baseRequestResponse;
 
@@ -60,6 +72,9 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         this.responseRememberMeCookieValue = shiroFingerprint.run().getResponseDefaultRememberMeCookieValue();
 
         this.newRequestRememberMeCookieValue = "";
+
+        this.startDate = startDate;
+        this.maxExecutionTime = maxExecutionTime;
 
         this.setExtensionName("ShiroCipherKeyMethod2");
 
@@ -80,24 +95,28 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         byte[] exp = getBytes(new SimplePrincipalCollection());
 
         // 加密key检测
-        for (String key : keys) {
+        for (String key : this.keys) {
             // 说明检测到shiro key了
             if (this.isShiroCipherKeyExists()) {
-                break;
+                return;
             }
 
+            // 如果 相似度匹配算法,匹配失败的次数,超过30次,那么就可以退出了
+            // 因为这种情况下,大概率触发waf规则了, 那么就没必要跑剩下的了
             if (this.errorNumber >= this.endErrorNumber) {
-                break;
+                // 抛异常结束任务
+                throw new DiffPageException("shiro key scan too many errors");
+            }
+
+            // 判断程序是否运行超时
+            int startTime = this.customHelpers.getSecondTimestamp(this.startDate);
+            int currentTime = this.customHelpers.getSecondTimestamp(new Date());
+            int runTime = currentTime - startTime;
+            if (runTime >= this.maxExecutionTime) {
+                throw new TaskTimeoutException("shiro key scan task timeout");
             }
 
             this.cipherKeyDetection(key, exp);
-        }
-
-        // 如果 相似度匹配算法,匹配失败的次数,超过30次,那么就可以退出了
-        // 因为这种情况下,大概率触发waf规则了, 那么就没必要跑剩下的了
-        if (this.errorNumber >= this.endErrorNumber) {
-            // 抛异常结束任务
-            throw new DiffPageException("shiro key scan too many errors");
         }
     }
 

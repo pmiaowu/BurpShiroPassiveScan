@@ -1,6 +1,6 @@
 package burp.CustomErrorException;
 
-public class DiffPageException  extends RuntimeException {
+public class DiffPageException extends RuntimeException {
     public DiffPageException() {
         super();
     }
