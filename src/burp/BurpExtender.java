@@ -16,8 +16,8 @@ import burp.CustomErrorException.TaskTimeoutException;
 
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
-    public static String NAME = "BurpShiroPassiveScan";
-    public static String VERSION = "1.7.1 beta";
+    public static String NAME = "ShiroScan";
+    public static String VERSION = "1.7.2 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
