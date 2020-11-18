@@ -98,7 +98,7 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
     @Override
     public int getColumnCount()
     {
-        return 8;
+        return 9;
     }
 
     @Override
@@ -109,16 +109,18 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
             case 1:
                 return "extensionMethod";
             case 2:
-                return "requestMethod";
+                return "encryptMethod";
             case 3:
-                return "url";
+                return "requestMethod";
             case 4:
-                return "statusCode";
+                return "url";
             case 5:
-                return "issue";
+                return "statusCode";
             case 6:
-                return "startTime";
+                return "issue";
             case 7:
+                return "startTime";
+            case 8:
                 return "endTime";
         }
         return null;
@@ -140,16 +142,18 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
             case 1:
                 return datas.extensionMethod;
             case 2:
-                return datas.requestMethod;
+                return datas.encryptMethod;
             case 3:
-                return datas.url;
+                return datas.requestMethod;
             case 4:
-                return datas.statusCode;
+                return datas.url;
             case 5:
-                return datas.issue;
+                return datas.statusCode;
             case 6:
-                return datas.startTime;
+                return datas.issue;
             case 7:
+                return datas.startTime;
+            case 8:
                 return datas.endTime;
         }
         return null;
@@ -183,8 +187,9 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
      * @param requestResponse
      * @return int id
      */
-    public int add(String extensionMethod, String requestMethod, String url,
-                   String statusCode, String issue, IHttpRequestResponse requestResponse) {
+    public int add(String extensionMethod, String encryptMethod, String requestMethod,
+                   String url, String statusCode, String issue,
+                   IHttpRequestResponse requestResponse) {
         synchronized (this.Udatas) {
             Date d = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -195,6 +200,7 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
                 new TablesData(
                         id,
                         extensionMethod,
+                        encryptMethod,
                         requestMethod,
                         url,
                         statusCode,
@@ -220,7 +226,7 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
      * @param requestResponse
      * @return int id
      */
-    public int save(int id, String extensionMethod, String requestMethod,
+    public int save(int id, String extensionMethod, String encryptMethod, String requestMethod,
                     String url, String statusCode, String issue,
                     IHttpRequestResponse requestResponse) {
 
@@ -237,6 +243,7 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
                 new TablesData(
                         id,
                         extensionMethod,
+                        encryptMethod,
                         requestMethod,
                         url,
                         statusCode,
@@ -274,6 +281,7 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
     public static class TablesData {
         final int id;
         final String extensionMethod;
+        final String encryptMethod;
         final String requestMethod;
         final String url;
         final String statusCode;
@@ -282,11 +290,13 @@ public class Tags extends AbstractTableModel implements ITab, IMessageEditorCont
         final String startTime;
         final String endTime;
 
-        public TablesData(int id, String extensionMethod, String requestMethod,
-                          String url, String statusCode, String issue,
-                          IHttpRequestResponse requestResponse, String startTime, String endTime) {
+        public TablesData(int id, String extensionMethod, String encryptMethod,
+                          String requestMethod, String url, String statusCode,
+                          String issue, IHttpRequestResponse requestResponse, String startTime,
+                          String endTime) {
             this.id = id;
             this.extensionMethod = extensionMethod;
+            this.encryptMethod = encryptMethod;
             this.requestMethod = requestMethod;
             this.url = url;
             this.statusCode = statusCode;

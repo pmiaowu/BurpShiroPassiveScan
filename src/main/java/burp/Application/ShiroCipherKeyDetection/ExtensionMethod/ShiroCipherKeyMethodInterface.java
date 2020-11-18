@@ -12,6 +12,8 @@ public interface ShiroCipherKeyMethodInterface {
 
     Boolean isShiroCipherKeyExists();
 
+    String getEncryptMethod();
+
     String getCipherKey();
 
     IHttpRequestResponse getHttpRequestResponse();

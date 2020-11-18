@@ -34,10 +34,9 @@ BurpShiroPassiveScan 一个希望能节省一些渗透时间好进行划水的�
 
 # 检测方法选择
 
-目前有两种方法进行 shiro框架 key的检测
+目前有一种方法进行 shiro框架 key的检测
 
-1. 基于java原生jdk URLDNS 检测方法
-2. l1nk3r师傅 的 基于原生shiro框架 检测方法
+1. l1nk3r师傅 的 基于原生shiro框架 检测方法
 
 l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqhGCuQ
 
@@ -52,18 +51,6 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 3. 生成的密文更短, 不容易被waf拦截
 
 基于以上优点, 我决定了, 现在默认使用 l1nk3r师傅 这个方法进行 shiro key的爆破
-
-# 修改默认shiro框架key检测的方法
-
-有的小伙伴可能还是更喜欢dnslog的方式进行 key检测
-
-这里提供一个方法进行修改
-
-1. 下载本插件源码
-2. 打开文件: src/burp/BurpExtender.java
-3. 查找一个字符串 ShiroCipherKeyMethod2
-4. 将 ShiroCipherKeyMethod2 修改为 ShiroCipherKeyMethod1
-5. 重新编译
 
 # 使用方法
 例如我们正常访问网站
@@ -86,21 +73,10 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 
 ![](./Docs/images/8.png)
 
-![](./Docs/images/9.png)
-
-# dnslog详情方法查看
-如果想看插件发了什么dnslog详情可以查看这里
-
-![](./Docs/images/10.png)
-
-![](./Docs/images/11.png)
-
-![](./Docs/images/12.png)
-
 # shiro加密key查看
-![](./Docs/images/13.png)
+![](./Docs/images/7.png)
 
-![](./Docs/images/14.png)
+![](./Docs/images/8.png)
 
 # tag界面查看漏洞情况
 
@@ -116,5 +92,3 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 - [+] found shiro key: xxxxxx = 扫描出了 shiro key
 
 注意: 发生异常错误的时候,不用担心下次不会扫描了,下次访问该站点的时候依然会尝试进行shiro key扫描,直到扫描完毕为止
-
-![](./Docs/images/15.png)

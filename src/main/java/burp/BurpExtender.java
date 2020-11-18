@@ -17,7 +17,7 @@ import burp.CustomErrorException.TaskTimeoutException;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "ShiroScan";
-    public static String VERSION = "1.7.2 beta";
+    public static String VERSION = "1.7.3 beta";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -110,6 +110,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
         byte[] shiroFingerprintResponse = shiroFingerprintHttpRequestResponse.getResponse();
         int tagId = this.tags.add(
                 shiroFingerprint.run().getExtensionName(),
+                "",
                 this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
                 baseRequestUrl.toString(),
                 this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
@@ -134,6 +135,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
                 this.tags.save(
                         tagId,
                         shiroCipherKey.run().getExtensionName(),
+                        shiroCipherKey.run().getEncryptMethod(),
                         this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
                         baseRequestUrl.toString(),
                         this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
@@ -158,6 +160,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             this.tags.save(
                     tagId,
                     shiroCipherKey.run().getExtensionName(),
+                    shiroCipherKey.run().getEncryptMethod(),
                     this.helpers.analyzeRequest(shiroCipherKeyRequestResponse).getMethod(),
                     baseRequestUrl.toString(),
                     this.helpers.analyzeResponse(shiroCipherKeyResponse).getStatusCode() + "",
@@ -186,6 +189,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             this.tags.save(
                     tagId,
                     shiroFingerprint.run().getExtensionName(),
+                    "",
                     this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
                     baseRequestUrl.toString(),
                     this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
@@ -214,6 +218,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             this.tags.save(
                     tagId,
                     shiroFingerprint.run().getExtensionName(),
+                    "",
                     this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
                     baseRequestUrl.toString(),
                     this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",
@@ -238,6 +243,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             this.tags.save(
                     tagId,
                     shiroFingerprint.run().getExtensionName(),
+                    "",
                     this.helpers.analyzeRequest(shiroFingerprintHttpRequestResponse).getMethod(),
                     baseRequestUrl.toString(),
                     this.helpers.analyzeResponse(shiroFingerprintResponse).getStatusCode() + "",

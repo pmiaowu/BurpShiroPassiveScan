@@ -6,6 +6,8 @@ import burp.Application.ShiroCipherKeyDetection.ExtensionMethod.*;
 import burp.IBurpExtenderCallbacks;
 import burp.IHttpRequestResponse;
 
+import burp.Bootstrap.Encrypt.*;
+
 import java.util.Date;
 
 public class ShiroCipherKey {
@@ -77,18 +79,6 @@ public class ShiroCipherKey {
             this.maxExecutionTime += (keyLength - 20) * 2;
         }
 
-        if (callClassName.equals("ShiroCipherKeyMethod1")) {
-            ShiroCipherKeyMethod1 shiroCipherKey = new ShiroCipherKeyMethod1(
-                    callbacks,
-                    baseRequestResponse,
-                    keys,
-                    shiroFingerprint,
-                    this.startDate,
-                    this.maxExecutionTime);
-            this.shiroCipherKeyMethod = shiroCipherKey;
-            return this.shiroCipherKeyMethod;
-        }
-
         if (callClassName.equals("ShiroCipherKeyMethod2")) {
             ShiroCipherKeyMethod2 shiroCipherKey = new ShiroCipherKeyMethod2(
                     callbacks,
@@ -96,8 +86,23 @@ public class ShiroCipherKey {
                     keys,
                     shiroFingerprint,
                     this.startDate,
-                    this.maxExecutionTime);
-            this.shiroCipherKeyMethod = shiroCipherKey;
+                    this.maxExecutionTime,
+                    new CbcEncrypt());
+
+            if (shiroCipherKey.isShiroCipherKeyExists()) {
+                this.shiroCipherKeyMethod = shiroCipherKey;
+            } else {
+                ShiroCipherKeyMethod2 shiroCipherKey2 = new ShiroCipherKeyMethod2(
+                        callbacks,
+                        baseRequestResponse,
+                        keys,
+                        shiroFingerprint,
+                        this.startDate,
+                        this.maxExecutionTime,
+                        new GcmEncrypt());
+                this.shiroCipherKeyMethod = shiroCipherKey2;
+            }
+
             return this.shiroCipherKeyMethod;
         }
 

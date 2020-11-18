@@ -7,13 +7,12 @@ import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
 import burp.Bootstrap.DiffPage;
 import burp.Bootstrap.CustomHelpers;
 
+import burp.Bootstrap.Encrypt.EncryptInterface;
+
 import burp.CustomErrorException.DiffPageException;
 
 import burp.CustomErrorException.TaskTimeoutException;
-import org.apache.shiro.codec.Base64;
-import org.apache.shiro.crypto.AesCipherService;
 import org.apache.shiro.subject.SimplePrincipalCollection;
-import org.apache.shiro.util.ByteSource;
 
 import java.io.*;
 import java.net.URL;
@@ -49,12 +48,16 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
     private int errorNumber = 0;
     private int endErrorNumber = 30;
 
+    // 加密类
+    private EncryptInterface encryptClass;
+
     public ShiroCipherKeyMethod2(IBurpExtenderCallbacks callbacks,
                                  IHttpRequestResponse baseRequestResponse,
                                  String[] keys,
                                  ShiroFingerprint shiroFingerprint,
                                  Date startDate,
-                                 int maxExecutionTime) {
+                                 int maxExecutionTime,
+                                 EncryptInterface encrypt) {
         this.callbacks = callbacks;
         this.helpers = callbacks.getHelpers();
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
@@ -80,19 +83,23 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
         this.diffPage = new DiffPage();
 
+        this.encryptClass = encrypt;
+
         try {
             this.runExtension();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void runExtension() throws IOException {
+    private void runExtension() throws Exception {
         if (this.keys == null || this.keys.length <= 0) {
             throw new IllegalArgumentException("shiro加密key检测扩展-要进行爆破的keys不能为空, 请检查");
         }
 
-        byte[] exp = getBytes(new SimplePrincipalCollection());
+        byte[] exp = this.encryptClass.getBytes(new SimplePrincipalCollection());
 
         // 加密key检测
         for (String key : this.keys) {
@@ -128,7 +135,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         String shiroFingerprintHttpBody = this.getHttpResponseBody(this.shiroFingerprintHttpRequestResponse);
 
         // 使用当前可能正确的key-发送可能被此shiro框架成功解密的请求
-        String correctRememberMe = this.shiroRememberMeEncrypt(key, exp);
+        String correctRememberMe = this.encryptClass.encrypt(key, exp);
         IHttpRequestResponse newHttpRequestResponse1 = this.getNewHttpRequestResponse(correctRememberMe, 3);
 
         // 判断shiro指纹的请求与当前可能正确key的请求相似度是否差不多一致
@@ -149,7 +156,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         // 使用一个必定错误的key-发送一个肯定不会被此shiro框架成功解密的请求
         // 密钥 errorKey 然后 aes 加密 == U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=
         String errorKey = "U2FsdGVkX19xgIigFNCsuy2aXwtskOnJV8rQkrT9D5Y=";
-        String errorRememberMe = this.shiroRememberMeEncrypt(errorKey, exp);
+        String errorRememberMe = this.encryptClass.encrypt(errorKey, exp);
         IHttpRequestResponse newHttpRequestResponse2 = this.getNewHttpRequestResponse(errorRememberMe, 3);
 
         // 判断shiro指纹的请求与当前必定错误的请求相似度是否差不多一致
@@ -167,7 +174,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         }
 
         // 设置问题详情
-        this.setIssuesDetail(newHttpRequestResponse1, key, correctRememberMe);
+        this.setIssuesDetail(newHttpRequestResponse1, key, this.encryptClass.getName(), correctRememberMe);
     }
 
     /**
@@ -242,9 +249,14 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
     /**
      * 设置问题详情
      */
-    private void setIssuesDetail(IHttpRequestResponse httpRequestResponse, String key, String correctRememberMe) {
+    private void setIssuesDetail(
+            IHttpRequestResponse httpRequestResponse,
+            String key,
+            String encryptMethod,
+            String correctRememberMe) {
         this.setShiroCipherKeyExists();
         this.setCipherKey(key);
+        this.setEncryptMethod(encryptMethod);
         this.setHttpRequestResponse(httpRequestResponse);
         this.setNewRequestRememberMeCookieValue(correctRememberMe);
     }
@@ -255,25 +267,6 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
     private String getNewRequestRememberMeCookieValue() {
         return this.newRequestRememberMeCookieValue;
-    }
-
-    private static byte[] getBytes(Object obj) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = null;
-        ObjectOutputStream objectOutputStream = null;
-        byteArrayOutputStream = new ByteArrayOutputStream();
-        objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-        objectOutputStream.writeObject(obj);
-        objectOutputStream.flush();
-        return byteArrayOutputStream.toByteArray();
-    }
-
-    private static String shiroRememberMeEncrypt(String key, byte[] objectBytes) {
-        Base64 B64 = new Base64();
-        byte[] keyDecode = B64.decode(key);
-        AesCipherService cipherService = new AesCipherService();
-        ByteSource byteSource = cipherService.encrypt(objectBytes, keyDecode);
-        byte[] value = byteSource.getBytes();
-        return new String(B64.encode(value));
     }
 
     @Override
@@ -287,12 +280,13 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
 
         String str1 = String.format("<br/>=============ShiroCipherKeyDetail============<br/>");
         String str2 = String.format("ExtensionMethod: %s <br/>", this.getExtensionName());
-        String str3 = String.format("CookieName: %s <br/>",this.rememberMeCookieName);
-        String str4 = String.format("CookieValue: %s <br/>",this.getNewRequestRememberMeCookieValue());
-        String str5 = String.format("ShiroCipherKey: %s <br/>", this.getCipherKey());
-        String str6 = String.format("=====================================<br/>");
+        String str3 = String.format("EncryptMethod: %s <br/>", this.encryptClass.getName());
+        String str4 = String.format("CookieName: %s <br/>",this.rememberMeCookieName);
+        String str5 = String.format("CookieValue: %s <br/>",this.getNewRequestRememberMeCookieValue());
+        String str6 = String.format("ShiroCipherKey: %s <br/>", this.getCipherKey());
+        String str7 = String.format("=====================================<br/>");
 
-        String detail = str1 + str2 + str3 + str4 + str5 + str6;
+        String detail = str1 + str2 + str3 + str4 + str5 + str6 + str7;
 
         return new CustomScanIssue(
                 newHttpRequestResponse.getHttpService(),
@@ -322,6 +316,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
                         "注意: 该检测方法, 正确的时候响应包的 %s 会消失, 这表示当前key是正确的",
                         this.rememberMeCookieName));
         this.stdout.println(String.format("负责检测的插件: %s", this.getExtensionName()));
+        this.stdout.println(String.format("使用的加密方法: %s", this.encryptClass.getName()));
         this.stdout.println(String.format("url: %s", newHttpRequestUrl));
         this.stdout.println(String.format("请求方法: %s", newHttpRequestMethod));
         this.stdout.println(String.format("页面http状态: %d", newHttpResponseStatusCode));

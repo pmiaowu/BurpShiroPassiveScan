@@ -11,6 +11,8 @@ abstract class ShiroCipherKeyMethodAbstract implements ShiroCipherKeyMethodInter
 
     private String cipherKey = "";
 
+    private String encryptMethod = "";
+
     private Boolean isShiroCipherKeyExists = false;
 
     private IHttpRequestResponse newHttpRequestResponse;
@@ -64,6 +66,25 @@ abstract class ShiroCipherKeyMethodAbstract implements ShiroCipherKeyMethodInter
     public Boolean isShiroCipherKeyExists() {
         this.extensionNameCheck();
         return this.isShiroCipherKeyExists;
+    }
+
+    /**
+     * 设置程序使用的加密方法
+     */
+    protected void setEncryptMethod(String value) {
+        this.extensionNameCheck();
+        this.encryptMethod = value;
+    }
+
+    /**
+     * 获取加密的方法
+     * 例如返回: cbc, gcm 加密算法
+     * @return String
+     */
+    @Override
+    public String getEncryptMethod() {
+        this.extensionNameCheck();
+        return this.encryptMethod;
     }
 
     /**
