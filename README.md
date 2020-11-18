@@ -78,6 +78,13 @@ l1nk3r师傅的检测思路地址: https://mp.weixin.qq.com/s/do88_4Td1CSeKLmFqh
 
 ![](./Docs/images/8.png)
 
+# shiro加密方法
+目前搭配了两种加密方法 cbc 与 gcm 
+
+cbc就是经常使用的
+
+gcm就是最新出的
+
 # tag界面查看漏洞情况
 
 现在可以通过tag界面查看漏洞情况了
