@@ -52,16 +52,14 @@ public class ShiroFingerprintType1 extends ShiroFingerprintTypeAbstract {
 
         for (ICookie c : this.helpers.analyzeResponse(newHttpRequestResponse.getResponse()).getCookies()) {
             if (c.getName().equals(this.rememberMeCookieName)) {
-                if (c.getValue().equals("deleteMe")) {
-                    this.setShiroFingerprint();
+                this.setShiroFingerprint();
 
-                    this.setRequestDefaultRememberMeCookieName(this.rememberMeCookieName);
-                    this.setRequestDefaultRememberMeCookieValue(this.rememberMeCookieValue);
+                this.setRequestDefaultRememberMeCookieName(this.rememberMeCookieName);
+                this.setRequestDefaultRememberMeCookieValue(this.rememberMeCookieValue);
 
-                    this.setResponseDefaultRememberMeCookieName(c.getName());
-                    this.setResponseDefaultRememberMeCookieValue(c.getValue());
-                    break;
-                }
+                this.setResponseDefaultRememberMeCookieName(c.getName());
+                this.setResponseDefaultRememberMeCookieValue(c.getValue());
+                break;
             }
         }
     }

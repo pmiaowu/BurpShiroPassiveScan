@@ -186,7 +186,7 @@ public class ShiroCipherKeyMethod2 extends ShiroCipherKeyMethodAbstract {
         int number = 0;
         for (ICookie c : this.helpers.analyzeResponse(httpRequestResponse.getResponse()).getCookies()) {
             if (c.getName().equals(this.rememberMeCookieName)) {
-                if (c.getValue().equals(this.responseRememberMeCookieValue)) {
+                if (c.getValue().equals(this.responseRememberMeCookieValue) || c.getValue().equals("deleteMe")) {
                     number++;
                 }
             }
