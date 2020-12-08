@@ -79,7 +79,7 @@ public class ShiroCipherKey {
                 "m0/5ZZ9L4jjQXn7MREr/bw==", "NoIw91X9GSiCrLCF03ZGZw==", "oPH+bIxk5E2enZiIxcqaaA==",
                 "QAk0rp8sG0uJC4Ke2baYNA==", "Rb5RN+LofDWJlzWAwsXzxg==", "s2SE9y32PvLeYo+VGFpcKA==",
                 "SrpFBcVD89eTQ2icOD0TMg==", "Us0KvVhTeasAm43KFLAeng==", "YWJjZGRjYmFhYmNkZGNiYQ==",
-                "zIiHplamyXlVB11UXWol8g==", "ZjQyMTJiNTJhZGZmYjFjMQ=="
+                "zIiHplamyXlVB11UXWol8g==", "ZjQyMTJiNTJhZGZmYjFjMQ==", "kPv59vyqzj00x11LXJZTjJ2UHW48jzHN",
         };
 
         // 获得最终的程序最大执行时间
