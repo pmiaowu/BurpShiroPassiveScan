@@ -1,14 +1,14 @@
 package burp.Bootstrap;
 
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DomainNameRepeat {
 
     private Map<String, Integer> domainNameMap;
 
     public DomainNameRepeat() {
-        this.domainNameMap = new HashMap<String, Integer>();
+        this.domainNameMap = new ConcurrentHashMap<String, Integer>();
     }
 
     public Map<String, Integer> getDomainNameMap() {
@@ -20,7 +20,9 @@ public class DomainNameRepeat {
             throw new IllegalArgumentException("域名不能为空");
         }
 
-        this.getDomainNameMap().put(domainName, 1);
+        synchronized (this.getDomainNameMap()) {
+            this.getDomainNameMap().put(domainName, 1);
+        }
     }
 
     public void del(String domainName) {

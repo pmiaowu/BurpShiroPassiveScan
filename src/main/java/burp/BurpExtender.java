@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.io.PrintWriter;
 
 import burp.Bootstrap.DomainNameRepeat;
+import burp.Bootstrap.StringTotalNumber;
 import burp.Bootstrap.UrlRepeat;
 
 import burp.Application.ShiroFingerprintDetection.ShiroFingerprint;
@@ -17,7 +18,7 @@ import burp.CustomErrorException.TaskTimeoutException;
 public class BurpExtender implements IBurpExtender, IScannerCheck {
 
     public static String NAME = "ShiroScan";
-    public static String VERSION = "1.7.5 beta";
+    public static String VERSION = "1.7.6";
 
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
@@ -27,6 +28,12 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
     private DomainNameRepeat domainNameRepeat;
     private UrlRepeat urlRepeat;
 
+    private int domainNameScanMaxTotal = 10;
+    private int domainNamePathScanMaxTotal = 3;
+
+    private StringTotalNumber domainNameScanData = new StringTotalNumber();
+    private StringTotalNumber domainNamePathScanData = new StringTotalNumber();
+
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
@@ -35,7 +42,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
 
         this.domainNameRepeat = new DomainNameRepeat();
         this.urlRepeat = new UrlRepeat();
-        
+
         // 标签界面
         this.tags = new Tags(callbacks, NAME);
 
@@ -96,8 +103,24 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             return null;
         }
 
-        // 确定是 shiro框架 把该域名加入进HashMap里面防止下次重复扫描
-        this.domainNameRepeat.add(baseRequestDomainName);
+        // 判断当前域名是否超过总的扫描次数
+        Integer domainNameScanData = this.domainNameScanData.getData(baseRequestDomainName);
+        if (domainNameScanData != null && domainNameScanData >= this.domainNameScanMaxTotal) {
+            // 超过了总扫描次数, 把该域名加入进HashMap里面防止下次重复扫描
+            this.domainNameRepeat.add(baseRequestDomainName);
+            return null;
+        }
+
+        // 判断当前域名的的path是否超过扫描次数
+        String domainNamePathKey = baseRequestDomainName + "/" + this.getUrlPathName(baseRequestUrl);
+        Integer domainNamePathScanData = this.domainNamePathScanData.getData(domainNamePathKey);
+        if (domainNamePathScanData != null && domainNamePathScanData >= this.domainNamePathScanMaxTotal) {
+            return null;
+        }
+
+        // 添加一条记录表示当前已扫描的次数
+        this.domainNameScanData.add(baseRequestDomainName);
+        this.domainNamePathScanData.add(domainNamePathKey);
 
         // shiro指纹检测-报告输出
         issues.add(shiroFingerprint.run().export());
@@ -145,6 +168,9 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
                 return issues;
             }
 
+            // 确定扫描出了key, 把该域名加入进HashMap里面防止下次重复扫描
+            this.domainNameRepeat.add(baseRequestDomainName);
+
             // shiro加密key-报告输出
             issues.add(shiroCipherKey.run().export());
 
@@ -175,9 +201,10 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
              * 里面的 "d = new int[n + 1][m + 1];" 长度溢出了
              * 那么只能让他换个url重跑了
              */
-            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            // 将对应的内存记录删除,下次这个站点的请求进来了,还可以尝试重新跑
             this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
-            this.domainNameRepeat.del(baseRequestDomainName);
+            this.domainNameScanData.del(baseRequestDomainName);
+            this.domainNamePathScanData.del(domainNamePathKey);
 
             // 通知控制台报错
             this.stdout.println("========shiro-key模块错误-内存溢出============");
@@ -200,9 +227,10 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             // 报致命异常停止本次执行
             throw new RuntimeException(e);
         } catch (DiffPageException e) {
-            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            // 将对应的内存记录删除,下次这个站点的请求进来了,还可以尝试重新跑
             this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
-            this.domainNameRepeat.del(baseRequestDomainName);
+            this.domainNameScanData.del(baseRequestDomainName);
+            this.domainNamePathScanData.del(domainNamePathKey);
 
             // 通知控制台报错
             this.stdout.println("========shiro-key模块错误-相似度匹配多次失败============");
@@ -229,9 +257,10 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             // 报致命异常停止本次执行
             throw new RuntimeException(e);
         } catch (TaskTimeoutException e) {
-            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            // 将对应的内存记录删除,下次这个站点的请求进来了,还可以尝试重新跑
             this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
-            this.domainNameRepeat.del(baseRequestDomainName);
+            this.domainNameScanData.del(baseRequestDomainName);
+            this.domainNamePathScanData.del(domainNamePathKey);
 
             // 通知控制台报错
             this.stdout.println("========shiro-key模块错误-程序运行超时============");
@@ -254,9 +283,10 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             // 报致命异常停止本次执行
             throw new RuntimeException(e);
         } catch (Exception e) {
-            // 将 url重复检测 与 域名重复检测 的内存删除,下次这个站点的请求进来了,还可以尝试重新跑
+            // 将对应的内存记录删除,下次这个站点的请求进来了,还可以尝试重新跑
             this.urlRepeat.delMethodAndUrl(baseRequestMethod, newBaseUrl);
-            this.domainNameRepeat.del(baseRequestDomainName);
+            this.domainNameScanData.del(baseRequestDomainName);
+            this.domainNamePathScanData.del(domainNamePathKey);
 
             // 通知控制台报错
             this.stdout.println("========shiro-key模块错误-未知错误============");
@@ -282,6 +312,22 @@ public class BurpExtender implements IBurpExtender, IScannerCheck {
             // 输出跑到的问题给burp
             return issues;
         }
+    }
+
+    /**
+     * 获取当前url的path标志名称
+     */
+    private String getUrlPathName(URL url) {
+        String[] arrayPath = url.getPath().split("/");
+        if (arrayPath.length <= 1) {
+            return "otherPath";
+        }
+
+        if (arrayPath[1].contains(".")) {
+            return "otherPath";
+        }
+
+        return arrayPath[1];
     }
 
     /**

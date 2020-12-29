@@ -3,13 +3,13 @@ package burp.Bootstrap;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class UrlRepeat {
     private Map<String, Integer> requestMethodAndUrlMap;
 
     public UrlRepeat() {
-        this.requestMethodAndUrlMap = new HashMap<String, Integer>();
+        this.requestMethodAndUrlMap = new ConcurrentHashMap<String, Integer>();
     }
 
     public Map<String, Integer> getRequestMethodAndUrlMap() {
@@ -25,7 +25,9 @@ public class UrlRepeat {
             throw new IllegalArgumentException("url不能为空");
         }
 
-        this.getRequestMethodAndUrlMap().put(requestMethod + " " + url, 1);
+        synchronized (this.getRequestMethodAndUrlMap()) {
+            this.getRequestMethodAndUrlMap().put(requestMethod + " " + url, 1);
+        }
     }
 
     public void delMethodAndUrl(String requestMethod, String url) {
