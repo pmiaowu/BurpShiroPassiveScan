@@ -1,4 +1,8 @@
 .idea
 .DS_Store
+.settings
+.classpath
+.project
 out
 target
+BurpShiroPassiveScan.iml
