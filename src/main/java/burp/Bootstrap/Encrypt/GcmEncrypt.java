@@ -34,7 +34,7 @@ public class GcmEncrypt implements EncryptInterface {
             byte[] raw = Base64.decode(key);
             byte[] ivs = generateInitializationVector();
             SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
-            Cipher cipher = Cipher.getInstance("AES/GCM/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             GCMParameterSpec iv = new GCMParameterSpec(128, ivs);
             cipher.init(1, skeySpec, iv);
             byte[] encrypted = cipher.doFinal(pad(payload));
