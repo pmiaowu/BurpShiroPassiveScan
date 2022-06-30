@@ -27,11 +27,10 @@ public class CbcEncrypt implements EncryptInterface {
 
     @Override
     public String encrypt(String key, byte[] objectBytes) {
-        Base64 B64 = new Base64();
-        byte[] keyDecode = B64.decode(key);
+        byte[] keyDecode = Base64.decode(key);
         AesCipherService cipherService = new AesCipherService();
         ByteSource byteSource = cipherService.encrypt(objectBytes, keyDecode);
         byte[] value = byteSource.getBytes();
-        return new String(B64.encode(value));
+        return new String(Base64.encode(value));
     }
 }

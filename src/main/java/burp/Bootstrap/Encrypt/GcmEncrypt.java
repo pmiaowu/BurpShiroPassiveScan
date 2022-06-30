@@ -49,14 +49,14 @@ public class GcmEncrypt implements EncryptInterface {
     private static int initializationVectorSize = 128;
 
     private static byte[] pad(byte[] s) {
-        s = byteMerger(s, charToByte((char)(16 - s.length % 16)));
+        s = byteMerger(s, charToByte((char) (16 - s.length % 16)));
         return s;
     }
 
     private static byte[] charToByte(char c) {
         byte[] b = new byte[2];
-        b[0] = (byte)((c & 0xFF00) >> 8);
-        b[1] = (byte)(c & 0xFF);
+        b[0] = (byte) ((c & 0xFF00) >> 8);
+        b[1] = (byte) (c & 0xFF);
         return b;
     }
 

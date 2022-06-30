@@ -2,83 +2,96 @@ package burp;
 
 import java.net.URL;
 
-public class CustomScanIssue implements IScanIssue
-{
-    private IHttpService httpService;
+public class CustomScanIssue implements IScanIssue {
     private URL url;
-    private IHttpRequestResponse[] httpMessages;
-    private String name;
-    private String detail;
+    private String issueName;
+    private int issueType;
     private String severity;
+    private String confidence;
+    private String issueBackground;
+    private String remediationBackground;
+    private String issueDetail;
+    private String remediationDetail;
+    private IHttpRequestResponse[] httpMessages;
+    private IHttpService httpService;
 
     public CustomScanIssue(
-            IHttpService httpService,
             URL url,
+            String issueName,
+            int issueType,
+            String severity,
+            String confidence,
+            String issueBackground,
+            String remediationBackground,
+            String issueDetail,
+            String remediationDetail,
             IHttpRequestResponse[] httpMessages,
-            String name,
-            String detail,
-            String severity) {
-        this.httpService = httpService;
+            IHttpService httpService) {
         this.url = url;
-        this.httpMessages = httpMessages;
-        this.name = name;
-        this.detail = detail;
+        this.issueName = issueName;
+        this.issueType = issueType;
         this.severity = severity;
+        this.confidence = confidence;
+        this.issueBackground = issueBackground;
+        this.remediationBackground = remediationBackground;
+        this.issueDetail = issueDetail;
+        this.remediationDetail = remediationDetail;
+        this.httpMessages = httpMessages;
+        this.httpService = httpService;
     }
 
     @Override
     public URL getUrl() {
-        return url;
+        return this.url;
     }
 
     @Override
     public String getIssueName() {
-        return name;
+        return this.issueName;
     }
 
     @Override
     public int getIssueType() {
-        return 0;
+        return this.issueType;
     }
 
     @Override
     public String getSeverity() {
-        return severity;
+        return this.severity;
     }
 
     @Override
     public String getConfidence() {
-        return "Certain";
+        return this.confidence;
     }
 
     @Override
     public String getIssueBackground() {
-        return null;
+        return this.issueBackground;
     }
 
     @Override
     public String getRemediationBackground() {
-        return null;
+        return this.remediationBackground;
     }
 
     @Override
     public String getIssueDetail() {
-        return detail;
+        return this.issueDetail;
     }
 
     @Override
     public String getRemediationDetail() {
-        return null;
+        return this.remediationDetail;
     }
 
     @Override
     public IHttpRequestResponse[] getHttpMessages() {
-        return httpMessages;
+        return this.httpMessages;
     }
 
     @Override
     public IHttpService getHttpService() {
-        return httpService;
+        return this.httpService;
     }
-
 }
